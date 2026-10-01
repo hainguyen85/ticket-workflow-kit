@@ -1,0 +1,12 @@
+.DS_Store
+
+# Workflow: machine-local settings and temporary helper input
+.agents/workflow.local.json
+.workflow-tmp/
+
+# Local configuration
+.env
+.env.*
+!.env.example
+
+.claude/

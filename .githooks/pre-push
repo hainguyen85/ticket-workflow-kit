@@ -1,0 +1,2 @@
+#!/bin/sh
+exec node .agents/workflow/lib/git-hook.mjs pre-push

@@ -1,0 +1,25 @@
+{
+  "name": "sdlc-skills",
+  "version": "1.0.0",
+  "description": "Task skills (task-sync → task-release) and workflow helpers",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "workshop:setup": "node scripts/workflow.mjs setup",
+    "workshop:check": "node scripts/workflow.mjs check",
+    "workshop:sync": "node scripts/workflow.mjs sync",
+    "workshop:status": "node scripts/workflow.mjs status",
+    "workshop:target": "node scripts/workflow.mjs target",
+    "workshop:task": "node scripts/task.mjs",
+    "test:workflow": "node --test tests/workflow/*.test.mjs",
+    "lint:workflow": "eslint --config scripts/workflow/eslint.config.mjs scripts/workflow.mjs scripts/task.mjs scripts/workflow tests/workflow"
+  },
+  "devDependencies": {
+    "eslint": "^9.16.0"
+  },
+  "engines": {
+    "node": "^22.12.0 || >=24.0.0",
+    "pnpm": "^9 || ^10 || ^11"
+  },
+  "packageManager": "pnpm@10.32.1"
+}

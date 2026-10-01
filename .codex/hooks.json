@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const cp=require('node:child_process'),p=require('node:path'),u=require('node:url');const r=cp.execFileSync('git',['rev-parse','--show-toplevel'],{encoding:'utf8'}).trim();import(u.pathToFileURL(p.join(r,'.agents/workflow/lib/agent-hook.mjs')).href)\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const cp=require('node:child_process'),p=require('node:path'),u=require('node:url');const r=cp.execFileSync('git',['rev-parse','--show-toplevel'],{encoding:'utf8'}).trim();import(u.pathToFileURL(p.join(r,'.agents/workflow/lib/agent-hook.mjs')).href)\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

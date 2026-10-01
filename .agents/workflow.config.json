@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 3,
+  "git": {
+    "remote": "origin",
+    "baseBranch": "main",
+    "protectedBranches": ["main"]
+  },
+  "docs": {
+    "ticketsPath": "docs/tickets"
+  },
+  "checks": {
+    "timeoutSeconds": 600
+  }
+}
