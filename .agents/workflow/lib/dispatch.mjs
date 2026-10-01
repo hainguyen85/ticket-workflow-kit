@@ -37,7 +37,7 @@ export async function nextAction(settings, ticket) {
     state.approval?.finalizeHash !== state.stages.finalize.hash ||
     state.approval?.sourceRevision !== state.revision
   )
-    return result('approve', 'Cần quyết định developer cho đúng plan.')
+    return result('approve', 'Cần người có thẩm quyền (developer hoặc leader) duyệt đúng plan này.')
   await requireApproval(directory, state)
   if (git(settings.repoRoot, ['status', '--porcelain']))
     return result('implement', 'Có thay đổi chưa commit; tiếp tục plan/checkpoint.')

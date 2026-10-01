@@ -1,9 +1,0 @@
-{
-  "schemaVersion": 2,
-  "github": { "host": "github.com" },
-  "release": {
-    "allowMerge": false,
-    "allowForcePush": false,
-    "protectedBranches": ["main"]
-  }
-}

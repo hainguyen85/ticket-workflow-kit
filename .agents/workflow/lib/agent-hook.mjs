@@ -15,6 +15,9 @@ try {
 }
 if (reason) {
   // Never echo prompt, arguments, credentials or transcript path.
+  // Runtimes differ in where they read a blocking reason: some parse the JSON on stdout,
+  // others (Claude Code on exit code 2) show stderr. Provide both.
+  process.stderr.write(reason + '\n')
   if (event === 'UserPromptSubmit')
     process.stdout.write(JSON.stringify({ decision: 'block', reason }) + '\n')
   else

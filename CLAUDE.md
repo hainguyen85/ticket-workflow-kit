@@ -1,3 +1,11 @@
+# Development workflow
+
+Quy tắc làm ticket bằng bộ task skills nằm trong `AGENTS.md`, dùng chung cho mọi agent runtime:
+
+@AGENTS.md
+
+Skills: `/task-sync`, `/task-analyze`, `/task-finalize`, `/task-implement`, `/task-review`, `/task-handoff`. Chúng được liên kết từ `.claude/skills/` tới bản duy nhất trong `.agents/skills/`; nếu chưa thấy, chạy `node .agents/workflow/task.mjs setup`.
+
 <!-- rtk-instructions v2 -->
 # RTK (Rust Token Killer) - Token-Optimized Commands
 

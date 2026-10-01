@@ -1,5 +1,6 @@
 import { readFile, realpath, lstat, copyFile, mkdir } from 'node:fs/promises'
 import { constants } from 'node:fs'
+import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -141,8 +142,21 @@ export async function loadConfig(root = repoRoot) {
   } catch {
     fail('docsRepo chưa tồn tại hoặc không truy cập được.')
   }
-  // Ticket records are written continuously; inside the source repo they would dirty every check.
-  if (isWithin(canonicalRepo, docsRepo)) fail('Repo hồ sơ phải nằm ngoài repo source.')
+  const docsRoot = path.join(docsRepo, ...segments)
+  // Ticket records are written continuously. Inside the source repo they must be ignored by it,
+  // otherwise every record would dirty the worktree and change the code fingerprint.
+  const insideSource = isWithin(canonicalRepo, docsRoot)
+  if (insideSource) {
+    const probe = path.relative(canonicalRepo, path.join(docsRoot, '.probe'))
+    const ignored = spawnSync('git', ['check-ignore', '-q', '--', probe.split(path.sep).join('/')], {
+      cwd: canonicalRepo,
+      stdio: 'ignore',
+    })
+    if (ignored.status !== 0)
+      fail(
+        'Thư mục hồ sơ nằm trong repo source thì phải được thêm vào .gitignore của repo source.',
+      )
+  }
   return {
     config: {
       git: { remote, baseBranch, protectedBranches: [...new Set([...protectedBranches, baseBranch])] },
@@ -150,7 +164,8 @@ export async function loadConfig(root = repoRoot) {
       checks: { timeoutSeconds },
     },
     docsRepo,
-    docsRoot: path.join(docsRepo, ...segments),
+    docsRoot,
+    insideSource,
     repoRoot: canonicalRepo,
   }
 }

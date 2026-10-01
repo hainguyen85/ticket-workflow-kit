@@ -39,6 +39,7 @@ export function checkBranch(branch, ticket) {
     fail('Branch phải theo mẫu feature/<key>-<slug> của đúng ticket.')
 }
 
+const contentTools = new Set(['Write', 'Edit', 'MultiEdit', 'NotebookEdit'])
 export function inspectHook(input) {
   const event = input.hook_event_name
   if (event === 'UserPromptSubmit') {
@@ -52,24 +53,31 @@ export function inspectHook(input) {
   if (!data || typeof data !== 'object') return 'Không đọc được tool input; kiểm tra cấu hình hook.'
   const text = JSON.stringify(data)
   if (hasSecret(text)) return 'Tool input chứa mẫu secret; dừng thao tác.'
+  // File-writing tools carry document or code content. The rules below are about commands and
+  // credential paths, so for those tools only the target path is examined, never the content.
+  const target = data.file_path ?? data.notebook_path
+  const scope =
+    contentTools.has(input.tool_name) && typeof target === 'string'
+      ? JSON.stringify({ target })
+      : text
   if (
     /(?:^|[\s/\\"'])\.env(?:\.[a-zA-Z0-9_-]+)*(?![a-zA-Z0-9_.-])/.test(
-      text.replace(/\.env(?:\.[a-zA-Z0-9_-]+)*\.example/g, 'ENV_TEMPLATE'),
+      scope.replace(/\.env(?:\.[a-zA-Z0-9_-]+)*\.example/g, 'ENV_TEMPLATE'),
     ) ||
-    /(?:\.ssh[/\\]|id_rsa|id_ed25519|credentials\.json|auth\.json)/i.test(text)
+    /(?:\.ssh[/\\]|id_rsa|id_ed25519|credentials\.json|auth\.json)/i.test(scope)
   )
     return 'Không đọc/ghi credentials trực tiếp bằng tool. Người dùng tự sửa env bằng editor.'
   if (
-    /\b(?:printenv|set\s*\||Get-ChildItem\s+Env:|process\.env|os\.environ)\b/i.test(text) ||
+    /\b(?:printenv|set\s*\||Get-ChildItem\s+Env:|process\.env|os\.environ)\b/i.test(scope) ||
     /(?:^|[;&|\s])env\s*(?:[;&|]|$)/.test(data.command ?? data.cmd ?? '')
   )
     return 'Không dump biến môi trường vào output.'
-  if (/--no-verify|core\.hooksPath|HUSKY\s*=\s*0|GIT_CONFIG_COUNT/i.test(text))
+  if (/--no-verify|core\.hooksPath|HUSKY\s*=\s*0|GIT_CONFIG_COUNT/i.test(scope))
     return 'Không tắt hoặc đổi hooks trong khi làm ticket.'
   if (
-    /\bgit\b[^\n]*\bpush\b/i.test(text) ||
-    /\bgh\s+pr\s+(?:merge|create)\b/i.test(text) ||
-    /\bglab\s+mr\s+(?:merge|create)\b/i.test(text)
+    /\bgit\b[^\n]*\bpush\b/i.test(scope) ||
+    /\bgh\s+pr\s+(?:merge|create)\b/i.test(scope) ||
+    /\bglab\s+mr\s+(?:merge|create)\b/i.test(scope)
   )
     return 'Agent không push hoặc tạo/merge MR. Dùng task-handoff để chuẩn bị; developer tự push và tạo MR.'
   return null

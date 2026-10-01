@@ -250,7 +250,7 @@ export async function recordStage(settings, ticket, action, input) {
     if (action === 'approve') {
       await stageArtifact(directory, state, 'finalize')
       if (input.decision !== 'approved' || !input.approvedBy || !input.evidence)
-        fail('Cần quyết định duyệt plan và nguồn xác nhận từ developer.')
+        fail('Cần quyết định duyệt plan, tên người duyệt và lời duyệt thật.')
       state.approval = {
         sourceRevision: state.revision,
         finalizeHash: state.stages.finalize.hash,
@@ -396,7 +396,7 @@ export async function requireApproval(directory, state) {
     state.approval?.sourceRevision !== state.revision ||
     state.approval.finalizeHash !== state.stages.finalize.hash
   )
-    fail('Chưa có approval đúng source/spec hiện tại. Developer cần duyệt plan trước implement.')
+    fail('Chưa có approval đúng source/spec hiện tại. Plan phải được duyệt (developer hoặc leader) trước implement.')
 }
 
 export async function handoffGate(settings, ticket) {

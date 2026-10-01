@@ -104,6 +104,7 @@ export async function fingerprint(root) {
     ),
   ].sort()
   const values = []
+  const regulars = []
   for (const name of files) {
     const file = path.join(root, name)
     let stat
@@ -113,17 +114,22 @@ export async function fingerprint(root) {
       if (error.code === 'ENOENT') continue
       throw error
     }
-    if (stat.isDirectory()) {
-      values.push([name, git(root, ['ls-files', '--stage', '--', name])])
-    } else {
-      const bytes = stat.isSymbolicLink() ? await readlink(file) : await readFile(file)
-      values.push([
-        name,
-        stat.isSymbolicLink() ? 'link' : stat.mode & 0o111 ? 'exec' : 'file',
-        digest(bytes),
-      ])
-    }
+    if (stat.isDirectory()) values.push([name, git(root, ['ls-files', '--stage', '--', name])])
+    else if (stat.isSymbolicLink()) values.push([name, 'link', digest(await readlink(file))])
+    else regulars.push([name, stat.mode & 0o111 ? 'exec' : 'file'])
   }
+  if (regulars.length) {
+    // Hash what Git would store, so a checkout that only converts line endings (autocrlf on
+    // Windows) does not make evidence look stale.
+    if (regulars.some(([name]) => /[\r\n]/.test(name))) fail('Tên file chứa ký tự xuống dòng.')
+    const ids = git(root, ['hash-object', '--stdin-paths'], {
+      input: regulars.map(([name]) => name).join('\n') + '\n',
+    }).split('\n')
+    if (ids.length !== regulars.length || ids.some((id) => !/^[a-f0-9]{40,64}$/.test(id)))
+      fail('Không tính được fingerprint của source.')
+    regulars.forEach(([name, kind], index) => values.push([name, kind, ids[index]]))
+  }
+  values.sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
   return digest(JSON.stringify(values))
 }
 

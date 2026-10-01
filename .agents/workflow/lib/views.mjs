@@ -118,7 +118,7 @@ export async function currentViews(directory, state, snapshot) {
       ? 'task-sync'
       : `task-${pending === 'analysis' ? 'analyze' : pending}`
     : !state.approval || state.approval.finalizeHash !== state.stages.finalize.hash
-      ? 'developer duyệt PLAN'
+      ? 'duyệt PLAN (developer hoặc leader)'
       : state.stages.implement.status !== 'verified' ||
           state.stages.review.status === 'changes-requested'
         ? 'task-implement'

@@ -1,6 +1,6 @@
-# RTK trong workshop
+# RTK trong workflow
 
-RTK giảm output CLI; không đo toàn bộ token/chi phí model. Skills không ghi metrics vào hồ sơ/PR.
+RTK giảm output CLI; không đo toàn bộ token/chi phí model. Skills không ghi metrics vào hồ sơ/MR.
 
 - Dùng filter phù hợp cho status/log/test/build có noise: `rtk git status`, runner filter có trong `rtk --help` của bản đang dùng.
 - Giữ raw bằng lệnh gốc hoặc `rtk proxy` khi đọc source/diff nguyên văn, JSON cần parse hoặc điều tra lỗi. Proxy chỉ tracking, gain 0% là đúng.

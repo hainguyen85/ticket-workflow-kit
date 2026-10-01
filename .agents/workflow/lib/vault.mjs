@@ -339,6 +339,8 @@ async function commitSources(directory, identity, sources, author) {
       stages: old.stages,
     }
   }
+  if (new Set(fresh.map((source) => source.name.toLowerCase())).size !== fresh.length)
+    fail('Các nguồn trong một lần sync bị trùng tên.')
   const revision = (old?.revision ?? 0) + 1
   const items = fresh.map((source) => ({
     id: `r${revision}/${source.name}`,

@@ -45,7 +45,10 @@ export async function prepareHandoff(settings, ticket, input) {
     if (input.revision !== state.revision) fail('MR draft không đúng source revision.')
     const { remote, baseBranch } = settings.config.git
     const { base, fetched } = fetchBase(settings)
-    git(settings.repoRoot, ['merge-base', '--is-ancestor', base, code.head])
+    if (!tryGit(settings.repoRoot, ['merge-base', '--is-ancestor', base, code.head]).ok)
+      fail(
+        'Base branch đã có commit mà feature chưa chứa; cập nhật branch, chạy lại checks và review trước handoff.',
+      )
     const files = git(settings.repoRoot, ['diff', '--name-only', '-z', `${base}...${code.head}`])
       .split('\0')
       .filter(Boolean)

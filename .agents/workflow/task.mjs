@@ -1,4 +1,6 @@
 import { readFile, lstat } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
+import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 import {
   checkNode,
@@ -21,6 +23,7 @@ import {
 } from './lib/vault.mjs'
 import { readSources } from './lib/source.mjs'
 import { setupHooks, hookStatus } from './lib/setup-hooks.mjs'
+import { skillLinkStatus, CLAUDE_SKILLS } from './lib/skill-links.mjs'
 import { recordStage, context, requireApproval, intakeStatus } from './lib/stages.mjs'
 import { prepareHandoff, completeHandoff, fetchBase } from './lib/handoff.mjs'
 import { git, tryGit, codeRevision, identity } from './lib/git.mjs'
@@ -81,6 +84,14 @@ async function jsonInput(file) {
 function docsRepoStatus(settings, directory = null) {
   if (!tryGit(settings.docsRepo, ['rev-parse', '--show-toplevel']).ok)
     return { git: false, note: 'docsRepo chưa phải Git repo; hồ sơ chưa chia sẻ được cho team.' }
+  // Records ignored by the repo that contains them (for example a folder inside the source
+  // repo) never reach the team through that repo; say so instead of reporting "nothing to commit".
+  if (tryGit(settings.docsRepo, ['check-ignore', '-q', '--', `${settings.docsRoot}/.probe`]).ok)
+    return {
+      git: true,
+      ignored: true,
+      note: 'Thư mục hồ sơ đang bị Git ignore; hồ sơ không được chia sẻ qua repo này.',
+    }
   const scope = directory ? ['--', ticketRoot(directory)] : []
   const dirty = tryGit(settings.docsRepo, [
     'status',
@@ -135,6 +146,14 @@ try {
         fail(`${LOCAL_FILE} phải được Git ignore và không được tracked.`)
       if (!ignored('.workflow-tmp/input.json'))
         fail('Thêm .workflow-tmp/ vào .gitignore: input tạm không được làm bẩn worktree.')
+      // Skill links are per machine (symlink or junction); tracked or untracked they would
+      // show up as worktree changes.
+      const claudeSkills = existsSync(path.join(repoRoot, '.claude/settings.json'))
+        ? await skillLinkStatus(repoRoot)
+        : null
+      for (const [name, state] of Object.entries(claudeSkills ?? {}))
+        if (state !== 'missing' && !ignored(`${CLAUDE_SKILLS}/${name}/SKILL.md`))
+          fail(`Thêm ${CLAUDE_SKILLS}/task-* vào .gitignore: liên kết skill là của từng máy.`)
       result = {
         node: process.versions.node,
         author: settings.author,
@@ -143,6 +162,7 @@ try {
         docsRepo: docsRepoStatus(settings),
         tickets: (await listTickets(settings)).length,
         hooks: hookStatus(repoRoot),
+        ...(claudeSkills ? { claudeSkills } : {}),
         baseRef: tryGit(repoRoot, [
           'rev-parse',
           '--verify',
@@ -157,25 +177,20 @@ try {
       for (const ticket of await listTickets(settings)) {
         try {
           const { state } = await context(settings, ticket)
-          tickets.push({ ticket, title: state.title, revision: state.revision, stages: state.stages })
+          tickets.push({
+            ticket,
+            title: state.title,
+            revision: state.revision,
+            stages: Object.fromEntries(
+              Object.entries(state.stages).map(([name, record]) => [name, record.status]),
+            ),
+          })
         } catch (error) {
           if (!(error instanceof WorkflowError)) throw error
           tickets.push({ ticket, error: error.message })
         }
       }
-      result = {
-        target: publicTarget(settings),
-        tickets: tickets.map(({ stages, ...rest }) => ({
-          ...rest,
-          ...(stages
-            ? {
-                stages: Object.fromEntries(
-                  Object.entries(stages).map(([name, record]) => [name, record.status]),
-                ),
-              }
-            : {}),
-        })),
-      }
+      result = { target: publicTarget(settings), tickets }
     } else if (command === 'sync') {
       const options = parseSync(args)
       const sources = await readSources(options)

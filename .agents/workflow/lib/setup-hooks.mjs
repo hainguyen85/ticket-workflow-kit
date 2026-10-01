@@ -3,6 +3,35 @@ import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 import { fail } from './config.mjs'
 import { git } from './git.mjs'
+import { linkSkills } from './skill-links.mjs'
+
+// One policy (agent-hook.mjs), packaged for each supported agent runtime.
+const runtimes = { codex: '.codex/hooks.json', claude: '.claude/settings.json' }
+
+async function runtimeHooks(root) {
+  const configured = []
+  for (const [name, file] of Object.entries(runtimes)) {
+    let text
+    try {
+      text = await readFile(path.join(root, file), 'utf8')
+    } catch (error) {
+      if (error.code === 'ENOENT') continue
+      throw error
+    }
+    let hooks
+    try {
+      hooks = JSON.parse(text).hooks
+    } catch {
+      fail(`${file} không phải JSON hợp lệ.`)
+    }
+    const wired = (event) => JSON.stringify(hooks?.[event] ?? '').includes('agent-hook.mjs')
+    if (!wired('UserPromptSubmit') || !wired('PreToolUse'))
+      fail(`${file} thiếu runtime hook UserPromptSubmit/PreToolUse của workflow.`)
+    configured.push(name)
+  }
+  if (!configured.length) fail('Thiếu runtime hook config (.codex/hooks.json hoặc .claude/settings.json).')
+  return configured
+}
 
 export async function setupHooks(root) {
   const existing = spawnSync('git', ['config', '--get', 'core.hooksPath'], {
@@ -15,13 +44,14 @@ export async function setupHooks(root) {
   for (const hook of ['pre-commit', 'commit-msg', 'pre-push'])
     await chmod(path.join(root, '.githooks', hook), 0o755)
   // Validate packaging before enabling it. No global changes or trust-store edits.
-  const hooks = JSON.parse(await readFile(path.join(root, '.codex/hooks.json'), 'utf8'))
-  if (!hooks.hooks?.UserPromptSubmit || !hooks.hooks?.PreToolUse) fail('Thiếu runtime hook config.')
+  const configured = await runtimeHooks(root)
   git(root, ['config', '--local', 'core.hooksPath', '.githooks'])
   return {
     git: 'enabled-local',
     runtime: 'configured-needs-trust',
-    next: 'Mở session Codex tại repo, vào /hooks để review/trust hooks, rồi kiểm tra lại trong session mới.',
+    runtimes: configured,
+    ...(configured.includes('claude') ? { claudeSkills: await linkSkills(root) } : {}),
+    next: 'Codex: mở session tại repo, vào /hooks để review/trust. Claude Code: mở session mới tại repo và chấp nhận hooks của project. Sau đó thử một lệnh bị chặn để xác nhận.',
   }
 }
 
