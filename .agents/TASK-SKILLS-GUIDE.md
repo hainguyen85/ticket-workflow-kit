@@ -6,10 +6,10 @@
 ## Mục lục
 
 1. [Tóm tắt trong 1 phút](#1-tóm-tắt-trong-1-phút)
-2. [Nguyên tắc chung của team](#2-nguyên-tắc-chung-của-team)
-3. [Kiến trúc](#3-kiến-trúc)
-4. [Workflow từng bước](#4-workflow-từng-bước)
-5. [Vai trò và trách nhiệm](#5-vai-trò-và-trách-nhiệm)
+2. [Vai trò và trách nhiệm](#2-vai-trò-và-trách-nhiệm)
+3. [Nguyên tắc chung của team](#3-nguyên-tắc-chung-của-team)
+4. [Kiến trúc](#4-kiến-trúc)
+5. [Workflow từng bước](#5-workflow-từng-bước)
 6. [Các tình huống đặc biệt](#6-các-tình-huống-đặc-biệt)
 7. [Quy ước Git, MR và repo hồ sơ](#7-quy-ước-git-mr-và-repo-hồ-sơ)
 8. [Onboarding: setup máy mới](#8-onboarding-setup-máy-mới)
@@ -24,21 +24,22 @@
 Bộ skill gồm **6 bước cố định** để đưa một yêu cầu (file hoặc mô tả trong chat) thành một branch đã kiểm chứng, sẵn sàng tạo MR:
 
 ```mermaid
-flowchart LR
-    subgraph Leader
-        S["task-sync<br/>Tạo ticket từ file/chat"] --> A["task-analyze<br/>Điều tra, đề xuất"]
-    end
-    A -- "push repo hồ sơ" --> F
-    subgraph Developer
-        F["task-finalize<br/>Chốt PLAN"] --> P{{"Duyệt plan<br/>(developer hoặc leader)"}}
-        P --> I["task-implement<br/>Code + chạy checks"]
-        I --> R["task-review<br/>Review code + evidence"]
-        R -- findings --> I
-        R --> H["task-handoff<br/>Chuẩn bị bàn giao"]
-        H --> M{{"Tự push + tạo MR"}}
-    end
-    M --> L{{"Leader review/merge"}}
+flowchart TD
+    S["task-sync<br/>Create ticket"]:::leader --> A["task-analyze<br/>Investigate"]:::leader
+    A -- "push docs repo" --> F["task-finalize<br/>Write PLAN"]:::dev
+    F --> P(["Approve plan<br/>dev or leader"]):::gate
+    P --> I["task-implement<br/>Code + checks"]:::dev
+    I --> R["task-review<br/>Review code + evidence"]:::dev
+    R -. "findings" .-> I
+    R -- "pass" --> H["task-handoff<br/>Prepare MR"]:::dev
+    H --> M(["Dev pushes + opens MR"]):::gate
+    M --> L(["Leader reviews + merges"]):::gate
+    classDef leader fill:#e8f0fe,stroke:#4a6fa5,color:#1a1a1a
+    classDef dev fill:#e6f4ea,stroke:#4a8f5f,color:#1a1a1a
+    classDef gate fill:#fff4e0,stroke:#c08a2e,color:#1a1a1a
 ```
+
+Xanh dương: bước của leader · xanh lá: bước của developer (agent làm cùng) · cam: điểm quyết định của người. Ai làm gì ở từng bước: xem [mục 2](#2-vai-trò-và-trách-nhiệm).
 
 Bốn điều quan trọng nhất:
 
@@ -47,11 +48,74 @@ Bốn điều quan trọng nhất:
 - **Hồ sơ ticket nằm ở repo Git riêng**, chia sẻ bằng commit/push. Mỗi ticket có `TASK.md`, `PLAN.md`, `CHECKS.md`, nguồn yêu cầu trong `request/` và lịch sử bất biến trong `.workflow/`. Không sửa tay.
 - **Chỉ cần Git và Node.** Không token, không gọi API hosting, không `package.json`. Lệnh duy nhất: `node .agents/workflow/task.mjs`.
 
-Cách gọi skill: Codex dùng `$task-sync`, Claude Code dùng `/task-sync`, kèm file hoặc mô tả yêu cầu; các bước sau kèm **ticket ID**, ví dụ `$task-analyze 260930-1415` hoặc `/task-analyze 260930-1415`.
+Cách gọi skill: Codex dùng `$task-sync`, Claude Code dùng `/task-sync`, kèm file hoặc mô tả yêu cầu; các bước sau kèm **ticket ID**, ví dụ `$task-analyze REQ-260930-1415` hoặc `/task-analyze REQ-260930-1415`.
 
 ---
 
-## 2. Nguyên tắc chung của team
+## 2. Vai trò và trách nhiệm
+
+Ba vai trò cùng làm việc trên một ticket: **Leader** đưa yêu cầu và merge, **Developer** chọn hướng, duyệt/push, **Agent** làm phần việc kỹ thuật. Agent không có quyền quyết định: không tự duyệt plan, không push, không merge.
+
+### 2.1 Swimlane
+
+```mermaid
+sequenceDiagram
+    participant L as Leader
+    participant A as Agent
+    participant D as Developer
+
+    rect rgba(100,140,200,0.15)
+    Note over L,D: 1. Intake and analysis
+    L->>A: Request file or chat (sync)
+    A-->>L: Summary to confirm
+    L->>A: Answer open questions (analyze)
+    A-->>L: Findings and options
+    L->>D: Share docs repo + ticket ID
+    end
+
+    rect rgba(220,170,60,0.15)
+    Note over L,D: 2. Plan
+    D->>A: Choose option (finalize)
+    A-->>D: PLAN with checks and delivery
+    Note over L,D: Approver: developer or leader
+    D->>A: Approval in exact words
+    end
+
+    rect rgba(80,160,100,0.15)
+    Note over L,D: 3. Build and review
+    Note over A: Code, run checks, commit (implement)
+    Note over A: Review code + evidence (review)
+    A-->>D: Findings or scope change
+    D->>A: Decide
+    end
+
+    rect rgba(160,110,190,0.15)
+    Note over L,D: 4. Handoff and merge
+    A-->>D: Git commands + MR text (handoff)
+    Note over D: Publish branch, open MR
+    D->>A: MR URL
+    A-->>D: Handoff recorded
+    D->>L: MR ready
+    Note over L: Review and merge
+    end
+```
+
+### 2.2 Ai làm gì ở từng bước
+
+| Bước | Agent | Leader | Developer |
+|---|---|---|---|
+| Sync | Lưu nguồn, tóm tắt | **Cung cấp nguồn**, xác nhận nội dung đã lưu | – |
+| Analyze | Điều tra, đề xuất | Trả lời câu hỏi quyết định, **push repo hồ sơ** | – |
+| Finalize | Soạn plan, checks, delivery | Tư vấn scope; **duyệt plan** nếu team giao leader duyệt | **Chọn hướng**; **duyệt plan** nếu developer tự duyệt |
+| Implement | Code, chạy checks, commit | – | Theo dõi, cấp quyền/môi trường nếu plan nêu |
+| Review | Review code + evidence | – | Đọc findings, quyết định khi đổi scope |
+| Handoff | Prepare, ghi nhận | **Review MR, merge** | **Push, tạo MR** |
+
+Helper không ép vai trò: nó chỉ ghi đúng tên người chạy lệnh vào từng bản ghi. Developer chịu trách nhiệm cuối cùng cho những gì mình duyệt và push; "agent đã làm" không phải lý do để bỏ qua việc đọc plan và diff.
+
+---
+
+## 3. Nguyên tắc chung của team
 
 Phần lớn được helper/hook **cưỡng chế**, không chỉ là khuyến nghị.
 
@@ -71,9 +135,9 @@ Phần lớn được helper/hook **cưỡng chế**, không chỉ là khuyến 
 
 ---
 
-## 3. Kiến trúc
+## 4. Kiến trúc
 
-### 3.1 Các lớp
+### 4.1 Các lớp
 
 ```mermaid
 flowchart TB
@@ -81,24 +145,24 @@ flowchart TB
         SK["Skills<br/>.agents/skills/task-*/SKILL.md"]
         AH["Runtime hooks<br/>.codex/hooks.json · .claude/settings.json<br/>→ agent-hook.mjs"]
     end
-    subgraph Repo["Repo source"]
+    subgraph Repo["Source repo"]
         CLI["CLI<br/>.agents/workflow/task.mjs"]
-        LIB["Thư viện<br/>.agents/workflow/lib/*.mjs"]
+        LIB["Libraries<br/>.agents/workflow/lib/*.mjs"]
         GH["Git hooks<br/>.githooks/ → git-hook.mjs"]
-        CFG["workflow.config.json (commit)<br/>workflow.local.json (theo máy)"]
+        CFG["Config<br/>workflow.config.json (shared)<br/>workflow.local.json (per machine)"]
     end
-    subgraph Docs["Repo hồ sơ (Git repo riêng)"]
+    subgraph Docs["Docs repo (separate Git repo)"]
         V["docs/tickets/&lt;key&gt;-&lt;slug&gt;/<br/>TASK · PLAN · CHECKS · request/ · .workflow/"]
     end
-    REMOTE[("Git remote<br/>của repo source")]
+    REMOTE[("Source repo remote")]
 
-    SK -- "gọi lệnh" --> CLI
-    AH -. "chặn tool call nguy hiểm" .-> SK
+    SK -- "run commands" --> CLI
+    AH -. "block risky tool calls" .-> SK
     CLI --> LIB
-    LIB -- "đọc" --> CFG
-    LIB -- "ghi/đọc file" --> V
-    LIB -- "fetch base, ls-remote<br/>(credential Git của dev)" --> REMOTE
-    GH -- "kiểm commit/push" --> LIB
+    LIB -- "read" --> CFG
+    LIB -- "read / write" --> V
+    LIB -- "fetch base, ls-remote<br/>(dev's Git credential)" --> REMOTE
+    GH -- "check commit / push" --> LIB
 ```
 
 | Lớp | Vai trò | Không làm |
@@ -110,7 +174,7 @@ flowchart TB
 
 Việc helper liên tục ghi hồ sơ **không** được làm bẩn worktree hay ảnh hưởng tới fingerprint của code. Hồ sơ nằm ngoài repo source thì hiển nhiên đạt; đặt **trong** repo source cũng được, miễn thư mục đó có trong `.gitignore` của repo source (helper kiểm điều này khi nạp cấu hình).
 
-### 3.2 Bản đồ file
+### 4.2 Bản đồ file
 
 | Thành phần | File | Chức năng chính |
 |---|---|---|
@@ -127,17 +191,27 @@ Việc helper liên tục ghi hồ sơ **không** được làm bẩn worktree h
 | Hook adapter | [agent-hook.mjs](workflow/lib/agent-hook.mjs), [git-hook.mjs](workflow/lib/git-hook.mjs), [setup-hooks.mjs](workflow/lib/setup-hooks.mjs) | Nối policy vào runtime hooks và Git hooks |
 | Skill cho Claude Code | [skill-links.mjs](workflow/lib/skill-links.mjs) | Liên kết `.claude/skills/task-*` tới bản duy nhất trong `.agents/skills` |
 
-### 3.3 Ticket ID
+### 4.3 Ticket ID
 
 ```text
-<key>-<slug>        ví dụ: 260930-1415-note-search   |   PRJ-123-note-search
+<key>-<slug>        ví dụ: REQ-260930-1415-note-search   |   CR-261002-0900-search-filter   |   GL-123-note-search
 ```
 
-- **key**: nếu nguồn yêu cầu mang mã từ hệ thống ngoài (Jira, Redmine…) thì dùng mã đó; nếu không, helper tạo từ thời điểm tạo ticket `YYMMDD-HHMM` (giờ local). Trùng phút thì lấy phút kế tiếp.
+- **Loại ticket** quyết định prefix của key tự sinh, để nhìn ID là biết ticket thuộc loại nào:
+
+  | Loại (`--type`) | Prefix | Dùng khi |
+  |---|---|---|
+  | `req` (mặc định) | `REQ` | Yêu cầu mới, từ file hoặc mô tả trong chat |
+  | `cr` | `CR` | Thay đổi yêu cầu của một ticket **đã bàn giao** |
+  | (dự án tự thêm) | ví dụ `BUG` | Khai trong `tickets.types` của `.agents/workflow.config.json` |
+
+- **key tự sinh**: `<PREFIX>-YYMMDD-HHMM` (giờ local lúc tạo). Trùng phút thì lấy phút kế tiếp.
+- **key ngoài**: nếu nguồn mang mã của hệ thống khác (issue GitLab/Redmine, Jira…) thì truyền `--key`, ví dụ `GL-123`, `RM-456`; mã đó được dùng nguyên vẹn nên prefix của tracker đã tự phân biệt.
+- **Liên kết**: ticket nối tiếp một ticket khác ghi `--relates-to <ticket>`; link hiện ở đầu TASK/PLAN/CHECKS.
 - **slug**: agent tự đặt, 2–6 từ ASCII chữ thường nối bằng `-`, mô tả nội dung chính.
 - Mọi lệnh nhận ID đầy đủ hoặc chỉ key (khi key xác định đúng một ticket).
 
-### 3.4 Hồ sơ ticket
+### 4.4 Hồ sơ ticket
 
 ```text
 <docsRepo>/docs/tickets/<key>-<slug>/
@@ -164,42 +238,114 @@ Việc helper liên tục ghi hồ sơ **không** được làm bẩn worktree h
 - **Mỗi lần ghi phải kèm `change: {summary, reason}`**; helper tự ghi author (Git identity của người chạy lệnh), thời điểm, version, changelog. Leader và developer ghi vào cùng một hồ sơ thì mỗi bản ghi mang đúng tên người ghi.
 - **Helper không commit/push repo hồ sơ.** Xem [mục 7](#7-quy-ước-git-mr-và-repo-hồ-sơ).
 
-### 3.5 State machine và dispatcher
+### 4.5 State machine và dispatcher
 
-| Stage | Status có thể có |
+#### Vòng đời trạng thái
+
+Mỗi stage có status riêng. Sơ đồ dưới là đường đi bình thường; stage sau chỉ chạy khi stage trước đã đạt.
+
+```mermaid
+stateDiagram-v2
+    direction TB
+    state "Intake · Analysis · Finalize" as DOCS {
+        direction LR
+        [*] --> d0
+        d0: not-started
+        d1: complete
+        d0 --> d1: record
+    }
+    state "Implement" as IMPL {
+        direction LR
+        [*] --> i0
+        i0: not-started
+        i1: in-progress
+        i2: blocked
+        i3: verified
+        i0 --> i1: checkpoint
+        i1 --> i2: blocker found
+        i2 --> i1: blocker cleared
+        i1 --> i3: record implement
+    }
+    state "Review" as REVW {
+        direction LR
+        [*] --> r0
+        r0: not-started
+        r1: changes-requested
+        r2: reviewed
+        r0 --> r1: has findings
+        r0 --> r2: pass
+        r1 --> r2: findings resolved, pass
+    }
+    state "Handoff" as HAND {
+        direction LR
+        [*] --> h0
+        h0: not-started
+        h1: prepared
+        h2: complete
+        h0 --> h1: prepare
+        h1 --> h2: remote HEAD matches
+    }
+    DOCS --> IMPL: plan approved
+    IMPL --> REVW: verified
+    REVW --> HAND: reviewed
+```
+
+| Status | Được ghi bởi |
 |---|---|
-| intake, analysis, finalize | `not-started` → `complete` · `needs-revalidation` |
-| implement | `in-progress` / `blocked` (checkpoint) → `verified` · `needs-revalidation` |
-| review | `changes-requested` → `reviewed` · `needs-revalidation` |
-| handoff | `prepared` → `complete` · `needs-revalidation` |
+| `complete` (intake, analysis, finalize) | `record intake` / `analysis` / `finalize` |
+| `in-progress`, `blocked` | `record checkpoint` (có `blocker` thì `blocked`) |
+| `verified` | `record implement` |
+| `changes-requested` | `record review-findings` |
+| `reviewed` | `record review` với `verdict: "pass"` |
+| `prepared` | `prepare` |
+| `complete` (handoff) | `handoff`, sau khi HEAD trên remote khớp |
 
-Quy tắc lan truyền: **ghi lại một stage thì mọi stage phía sau chuyển `needs-revalidation`**. Ghi lại intake/analysis/finalize còn **xóa approval**. Ghi `observe` với context mới làm implement/review/handoff phải kiểm lại. Sync có nguồn mới làm **mọi** stage phải kiểm lại.
+#### Khi nào stage bị `needs-revalidation`
 
-`node .agents/workflow/task.mjs status <ticket>` gọi dispatcher, luôn trả **một** bước tiếp theo:
+Từ bất kỳ status nào (`complete`, `verified`, `reviewed`, `prepared`…), stage có thể chuyển sang `needs-revalidation`. Muốn quay lại trạng thái đạt thì phải ghi lại chính stage đó.
+
+| Sự kiện | Stage bị `needs-revalidation` | Approval |
+|---|---|---|
+| Ghi lại một stage | Mọi stage **phía sau** nó | Bị xóa nếu stage ghi lại là intake / analysis / finalize |
+| `sync` có nguồn mới (CR) | **Mọi** stage | Mất hiệu lực (đã gắn với revision cũ) |
+| `observe` với context mới | implement, review, handoff | Giữ nguyên |
+
+#### Dispatcher
+
+`node .agents/workflow/task.mjs status <ticket>` gọi dispatcher. Dispatcher kiểm lần lượt từng điều kiện theo thứ tự 1 → 8, **dừng ở điều kiện đầu tiên không thỏa** và luôn trả về **một** bước tiếp theo (kèm lý do).
 
 ```mermaid
 flowchart TD
-    A{"intake / analysis / finalize<br/>complete ở revision hiện tại?"} -- chưa --> A1["sync / analysis / finalize"]
-    A -- rồi --> B{"Plan có requiredChecks<br/>và delivery hợp lệ?"}
-    B -- không --> B1["finalize"]
-    B -- có --> C{"Approval khớp hash plan<br/>và revision hiện tại?"}
-    C -- không --> C1["approve (developer)"]
-    C -- có --> D{"Worktree sạch và mọi<br/>required check pass, còn hiệu lực?"}
-    D -- không --> D1["implement"]
-    D -- có --> E{"Review đang changes-requested?"}
-    E -- có --> E1["implement"]
-    E -- không --> F{"implement verified<br/>đúng HEAD?"}
-    F -- không --> F1["implement"]
-    F -- có --> G{"review reviewed<br/>đúng HEAD?"}
-    G -- không --> G1["review"]
-    G -- có --> H{"handoff complete<br/>đúng HEAD?"}
-    H -- có --> H1["handed-off"]
-    H -- không --> H2["handoff<br/>(prepare, hoặc chờ developer push)"]
+    Start(["status &lt;ticket&gt;"]) --> C1
+    C1["1. Intake, analysis, finalize<br/>complete for this revision?"] -- yes --> C2
+    C2["2. Plan has checks<br/>and valid delivery?"] -- yes --> C3
+    C3["3. Approval matches<br/>plan hash + revision?"] -- yes --> C4
+    C4["4. Worktree clean,<br/>required checks pass + fresh?"] -- yes --> C5
+    C5["5. Review not<br/>changes-requested?"] -- yes --> C6
+    C6["6. Implement verified<br/>on current HEAD?"] -- yes --> C7
+    C7["7. Review passed<br/>on current HEAD?"] -- yes --> C8
+    C8["8. Handoff complete<br/>on current HEAD?"] -- yes --> N9(["handed-off<br/>wait for leader"])
+
+    C1 -- no --> N1["sync / analysis / finalize"]
+    C2 -- no --> N2["finalize"]
+    C3 -- no --> N3["approve"]
+    C4 -- no --> N4["implement"]
+    C5 -- no --> N4
+    C6 -- no --> N4
+    C7 -- no --> N7["review"]
+    C8 -- no --> N8["handoff<br/>prepare, or wait for dev push"]
+
+    classDef out fill:#e6f4ea,stroke:#4a8f5f,color:#1a1a1a
+    classDef done fill:#fff4e0,stroke:#c08a2e,color:#1a1a1a
+    class N1,N2,N3,N4,N7,N8 out
+    class N9 done
 ```
+
+Bước tiếp theo có thể là: `sync`, `analyze`, `finalize`, `approve`, `implement`, `review`, `handoff`, hoặc `handed-off` (chờ leader merge). Ba điều kiện 4–6 đều trả về `implement` vì cùng một ý: code/evidence chưa đạt hoặc review đang đòi sửa.
 
 **Khi nhận ticket từ người khác hoặc resume sau khi nghỉ, luôn bắt đầu bằng `status`**, không đoán từ trí nhớ.
 
-### 3.6 Verification: evidence là gì, khi nào hết hiệu lực
+### 4.6 Verification: evidence là gì, khi nào hết hiệu lực
 
 `node .agents/workflow/task.mjs check <ticket> <check-id>`:
 
@@ -228,7 +374,7 @@ Evidence **bị coi là cũ (stale)** khi:
 
 > Helper chứng minh **command đã chạy và evidence còn khớp**. Helper **không** chứng minh test viết đúng nghiệp vụ. Đó là việc của reviewer.
 
-### 3.7 Guardrails
+### 4.7 Guardrails
 
 **Runtime hooks** chạy trước mỗi prompt và mỗi tool call của agent. Codex đọc `.codex/hooks.json`, Claude Code đọc `.claude/settings.json`; cả hai gọi cùng một `agent-hook.mjs` nên luật giống hệt nhau. Chặn khi:
 
@@ -249,27 +395,30 @@ Runtime hook **chỉ hoạt động sau khi developer trust** trong runtime (Cod
 | Hook | Kiểm tra |
 |---|---|
 | `pre-commit` | Tên branch, author/committer trung lập; không commit file `.env*` (trừ `.example`), private key, nội dung chứa secret. |
-| `commit-msg` | Conventional Commits (`feat|fix|refactor|test|docs|chore|perf|build|ci`), không attribution/tên công cụ. |
+| `commit-msg` | Conventional Commits (`feat\|fix\|refactor\|test\|docs\|chore\|perf\|build\|ci`), không attribution/tên công cụ. |
 | `pre-push` | Chỉ push `feature/*`, không push nhánh bảo vệ, không xóa branch remote, không rewrite lịch sử, tối đa 200 commit, quét lại metadata và secret từng commit. |
 
 Git hooks áp dụng cho **mọi** commit/push trong repo source, kể cả khi developer thao tác tay. Hooks local **không thay thế** branch protection trên server Git.
 
 ---
 
-## 4. Workflow từng bước
+## 5. Workflow từng bước
+
+Mỗi bước dưới đây ghi rõ người chạy, đầu vào, đầu ra và gate. Bức tranh tổng thể theo vai trò xem ở [swimlane mục 2.1](#21-swimlane).
 
 Mọi skill (trừ sync khi tạo ticket mới) bắt đầu bằng `status <ticket>` để xác nhận đúng ticket, đọc state/view hiện hành. Chỉ đọc context vừa đủ, không nạp lại toàn bộ lịch sử.
 
 Và kết thúc giống nhau, bằng một báo cáo gồm: **đã làm gì · phát hiện chính · trạng thái thật · tài liệu hiện hành · bước tiếp theo**; rồi commit phần hồ sơ của ticket trong repo hồ sơ (không push).
 
-### 4.1 `task-sync`: Tạo ticket hoặc nhận CR
+### 5.1 `task-sync`: Tạo ticket hoặc nhận CR
 
 | | |
 |---|---|
 | **Người chạy** | Leader. |
 | **Nguồn** | File người dùng chỉ định (docx, pdf, md, ảnh…) và/hoặc mô tả viết trực tiếp trong chat. |
-| **Ticket mới** | `sync --title "<tiêu đề>" --slug <slug> [--key <mã ngoài>] [--file <path>]… [--chat <path>]` |
-| **CR** | `sync <ticket> [--file <path>]… [--chat <path>]` → revision mới, mọi stage `needs-revalidation`. |
+| **Ticket mới** | `sync --title "<tiêu đề>" --slug <slug> [--type <loại>] [--key <mã ngoài>] [--relates-to <ticket>] [--file <path>]… [--chat <path>]` |
+| **CR, ticket chưa bàn giao** | `sync <ticket> [--file <path>]… [--chat <path>]` → revision mới, mọi stage `needs-revalidation`. |
+| **CR, ticket đã bàn giao** | `sync --type cr --relates-to <ticket> --title … --slug … …` → ticket mới `CR-…`, liên kết về ticket gốc. |
 | **Output** | `request/r<N>/…`, và `TASK.md` (intake): tóm tắt yêu cầu tiếng Việt theo từng source ID (`r1/spec.docx`, `r2/chat.md`), delta so với revision trước, câu hỏi mở. |
 | **Gate** | `translatedSourceIds` phải phủ **đúng** các nguồn hiện hành. |
 | **Không làm** | Không chọn phương án, không lập plan, không code. Không tạo ticket mới cho yêu cầu thuộc ticket đã có. |
@@ -278,7 +427,7 @@ Với nguồn chat, agent chép **nguyên văn** phần yêu cầu vào `.workfl
 
 Sync lại cùng nội dung không tạo revision. Giới hạn: 20 file/lần, mỗi file dưới 20 MB, chat dưới 1 MB; nguồn text chứa mẫu secret bị từ chối.
 
-### 4.2 `task-analyze`: Điều tra và đề xuất
+### 5.2 `task-analyze`: Điều tra và đề xuất
 
 | | |
 |---|---|
@@ -293,7 +442,7 @@ Người lập plan thường không phải người phân tích, nên **TASK.md
 
 **Bàn giao ticket:** leader commit + push repo hồ sơ, báo ticket ID cho developer.
 
-### 4.3 `task-finalize`: Chốt PLAN
+### 5.3 `task-finalize`: Chốt PLAN
 
 | | |
 |---|---|
@@ -325,7 +474,7 @@ Nguyên tắc chốt plan:
 
 **Điểm dừng để duyệt:** người có thẩm quyền — developer hoặc leader — đọc PLAN.md và **duyệt bằng lời rõ ràng** (ví dụ "Duyệt plan v2"). Nếu leader duyệt, developer chuyển nguyên văn lời duyệt cho agent và `approvedBy` ghi tên leader. Agent ghi `approve` với `approvedBy` và `evidence` là chính lời duyệt đó. Đã duyệt thì agent không hỏi lại; cũng không tự tạo approval.
 
-### 4.4 `task-implement`: Code và kiểm chứng
+### 5.4 `task-implement`: Code và kiểm chứng
 
 | | |
 |---|---|
@@ -339,7 +488,7 @@ Nguyên tắc chốt plan:
 
 Báo cáo cuối Implement phải nói **nơi sử dụng** và **kết quả smoke thực tế**, kèm những phần chưa kiểm được (nếu có).
 
-### 4.5 `task-review`: Review độc lập
+### 5.5 `task-review`: Review độc lập
 
 | | |
 |---|---|
@@ -352,7 +501,7 @@ Báo cáo cuối Implement phải nói **nơi sử dụng** và **kết quả sm
 > Review **không phải** bước chuẩn bị môi trường còn thiếu. Target chưa sẵn sàng là một finding.
 > `reviewed` là review nội bộ trong workflow, **chưa phải** leader acceptance.
 
-### 4.6 `task-handoff`: Bàn giao
+### 5.6 `task-handoff`: Bàn giao
 
 ```mermaid
 sequenceDiagram
@@ -360,15 +509,15 @@ sequenceDiagram
     participant H as Helper
     participant D as Developer
     participant R as Git remote
-    A->>H: prepare <ticket> mr.json
-    H-->>A: handoff.md (lệnh push + nội dung MR), status prepared
-    A->>D: Đưa lệnh push và nội dung MR
-    D->>R: git push -u origin feature/<ticket>
-    D->>R: Tạo MR (thủ công)
-    D->>A: Đã push, URL MR là …
-    A->>H: handoff <ticket> [mr-url]
-    H->>R: ls-remote (đối chiếu HEAD)
-    H-->>A: complete, hoặc từ chối nếu chưa khớp
+    A->>H: prepare ticket + mr.json
+    H-->>A: handoff.md (status: prepared)
+    A->>D: Git commands + MR text
+    D->>R: Push feature branch
+    D->>R: Open MR (manual)
+    D->>A: Pushed, MR URL
+    A->>H: handoff ticket [mr-url]
+    H->>R: ls-remote (compare HEAD)
+    H-->>A: complete, or reject if HEAD differs
 ```
 
 | | |
@@ -381,30 +530,30 @@ sequenceDiagram
 
 ---
 
-## 5. Vai trò và trách nhiệm
-
-| Bước | Agent | Leader | Developer |
-|---|---|---|---|
-| Sync | Lưu nguồn, tóm tắt | **Cung cấp nguồn**, xác nhận nội dung đã lưu | – |
-| Analyze | Điều tra, đề xuất | Trả lời câu hỏi quyết định, **push repo hồ sơ** | – |
-| Finalize | Soạn plan, checks, delivery | Tư vấn scope; **duyệt plan** nếu team giao leader duyệt | **Chọn hướng**; **duyệt plan** nếu developer tự duyệt |
-| Implement | Code, chạy checks, commit | – | Theo dõi, cấp quyền/môi trường nếu plan nêu |
-| Review | Review code + evidence | – | Đọc findings, quyết định khi đổi scope |
-| Handoff | Prepare, ghi nhận | **Review MR, merge** | **Push, tạo MR** |
-
-Helper không ép vai trò: nó chỉ ghi đúng tên người chạy lệnh vào từng bản ghi. Developer chịu trách nhiệm cuối cùng cho những gì mình duyệt và push; "agent đã làm" không phải lý do để bỏ qua việc đọc plan và diff.
-
----
-
 ## 6. Các tình huống đặc biệt
 
-### 6.1 Yêu cầu thay đổi giữa chừng (Change Request)
+### 6.1 Thay đổi yêu cầu (Change Request)
+
+CR đi theo trạng thái của ticket:
+
+| Ticket gốc | CR là gì | Lệnh |
+|---|---|---|
+| **Chưa bàn giao** (đang sync … review, hoặc mới `prepared`) | Một **revision** của chính ticket đó | `sync <ticket> …` |
+| **Đã bàn giao** (`status` trả `handed-off`) | Một **ticket mới** loại CR, có branch và MR riêng | `sync --type cr --relates-to <ticket> …` |
+
+**Khi là revision:**
 
 1. Leader (hoặc người đang giữ ticket) chạy `task-sync` với ticket ID và nguồn mới. Helper lưu vào `request/r<N>`, **giữ nguyên nguồn cũ**, tăng `revision`, chuyển mọi stage sang `needs-revalidation`.
 2. `task-analyze` chỉ phân tích **delta** và ảnh hưởng, giữ lịch sử.
-3. `task-finalize` chỉ rõ phần plan thay đổi cần quyết định; developer duyệt lại.
+3. `task-finalize` chỉ rõ phần plan thay đổi cần quyết định; plan được duyệt lại.
 
-CR **không tự động** là quyền implement. Nếu developer đang làm dở, pull repo hồ sơ rồi `status` sẽ báo quay về `sync`/`analysis`.
+Nếu developer đang làm dở, pull repo hồ sơ rồi `status` sẽ báo quay về `sync`/`analysis`.
+
+**Khi là ticket CR mới:** ticket gốc giữ nguyên trạng thái đã bàn giao. Ticket `CR-…` đi lại đủ các bước từ sync đến handoff; ở bước analyze, agent đọc TASK/PLAN của ticket gốc (link ở đầu view) làm bối cảnh.
+
+Helper cưỡng chế cả hai chiều: không cho thêm nguồn vào ticket đã bàn giao, và không cho tạo ticket CR trỏ tới ticket chưa bàn giao. Ngoại lệ duy nhất là `sync <ticket> … --reopen`, dùng khi MR chưa merge và công việc tiếp tục trên cùng branch.
+
+CR **không tự động** là quyền implement, dù ở dạng nào.
 
 ### 6.2 Review có findings
 
@@ -436,27 +585,27 @@ Pull repo hồ sơ → `status <ticket>` → làm đúng bước được trả 
 
 ## 7. Quy ước Git, MR và repo hồ sơ
 
-### Branch (repo source)
+### 7.1 Branch (repo source)
 
 ```text
-feature/<key>-<slug>          ví dụ: feature/260930-1415-note-search
+feature/<key>-<slug>          ví dụ: feature/REQ-260930-1415-note-search
 ```
 
 Tạo bằng `start <ticket>` lúc bắt đầu implement, không tạo tay.
 
-### Commit (repo source)
+### 7.2 Commit (repo source)
 
 - Conventional Commits: `feat|fix|refactor|test|docs|chore|perf|build|ci`, scope tùy chọn: `feat(search): lọc theo danh mục`.
 - Dùng đúng Git identity đã cấu hình trên máy.
 - **Không** có tên công cụ/model (`claude`, `codex`, `copilot`, `gpt-…`), chữ viết tắt `AI` đứng riêng, `Co-authored-by`, "generated by", "AI-assisted". Từ "ai" thường trong câu tiếng Việt ("cho phép ai cũng xem được") thì dùng bình thường.
 
-### Merge Request
+### 7.3 Merge Request
 
 - Developer tự tạo. Tham chiếu ticket bằng `Refs <key>`; **không** dùng `Fixes/Closes/Resolves #<id>`.
 - Nội dung lấy từ `handoff.md`: behavior thay đổi, validation thật (ghi rõ local/mock/live), bước vận hành, giới hạn đã biết.
 - File trong MR phải nằm trong danh sách `files` của plan đã duyệt. Cần đụng file ngoài plan → quay Finalize.
 
-### Repo hồ sơ
+### 7.4 Repo hồ sơ
 
 - Helper chỉ ghi file. **Commit sau mỗi bước** phần hồ sơ của ticket (`docs(ticket): <ticket> <bước>`); agent có thể commit, **người dùng push**.
 - **Pull trước khi làm** một ticket nhận từ người khác.
@@ -491,8 +640,9 @@ Cấu hình dùng chung của dự án nằm trong `.agents/workflow.config.json
 |---|---|
 | Setup / kiểm môi trường | `T setup` · `T doctor` |
 | Liệt kê ticket | `T list` |
-| Tạo ticket | `T sync --title "<tiêu đề>" --slug <slug> [--key <key>] [--file <path>]… [--chat <path>]` |
-| CR | `T sync <ticket> [--file <path>]… [--chat <path>]` |
+| Tạo ticket | `T sync --title "<tiêu đề>" --slug <slug> [--type <loại>] [--key <key>] [--relates-to <ticket>] [--file <path>]… [--chat <path>]` |
+| CR, ticket chưa bàn giao | `T sync <ticket> [--file <path>]… [--chat <path>] [--reopen]` |
+| CR, ticket đã bàn giao | `T sync --type cr --relates-to <ticket> --title "<tiêu đề>" --slug <slug> …` |
 | Trạng thái + bước tiếp theo | `T status <ticket>` |
 | Ghi stage | `T record <ticket> <stage> .workflow-tmp/input.json` |
 | Kiểm approval | `T can-implement <ticket>` |
@@ -512,6 +662,9 @@ Các `<stage>` hợp lệ cho `record`: `intake`, `analysis`, `finalize`, `appro
 |---|---|---|
 | Không tìm thấy hồ sơ ticket | Sai ID, hoặc chưa pull repo hồ sơ | `T list`; pull repo hồ sơ |
 | Ticket key khớp nhiều hồ sơ | Key chưa đủ để xác định | Dùng ID đầy đủ `<key>-<slug>` |
+| Loại ticket không hợp lệ | `--type` không có trong `tickets.types` | Dùng một loại đã khai, hoặc thêm loại vào `.agents/workflow.config.json` |
+| Ticket đã bàn giao: thay đổi yêu cầu sau bàn giao là ticket mới | `sync <ticket>` kèm nguồn mới trên ticket đã bàn giao | Tạo ticket `--type cr --relates-to <ticket>`; hoặc `--reopen` nếu MR chưa merge |
+| Ticket … chưa bàn giao: thay đổi yêu cầu là một revision | Tạo ticket CR trỏ tới ticket đang làm | `sync <ticket> …` trên chính ticket đó |
 | Thư mục hồ sơ nằm trong repo source thì phải được thêm vào .gitignore | Hồ sơ đặt trong repo source nhưng chưa bị ignore | Thêm thư mục đó vào `.gitignore` của repo source, hoặc đặt repo hồ sơ ra ngoài |
 | Nguồn yêu cầu trong request/ đã bị sửa hoặc thiếu | Có người sửa/xóa file trong `request/` | Phục hồi bằng Git của repo hồ sơ |
 | request/r\<N\> đã tồn tại nhưng chưa được state ghi nhận | Lần sync trước bị ngắt | Kiểm, xóa thư mục đó, sync lại |
@@ -523,7 +676,7 @@ Các `<stage>` hợp lệ cho `record`: `intake`, `analysis`, `finalize`, `appro
 | Cần observe deliveryTarget và deliveryIdentity… | Chạy delivery check trước khi probe target | Chuẩn bị target, `record observe`, rồi chạy check |
 | Required check `<id>` chưa chạy qua helper | Chưa chạy check | `T check <ticket> <check-id>` |
 | Required check `<id>` fail hoặc evidence đã cũ | Check fail/timeout, hoặc code/context đổi sau khi chạy | Xem log trong `.workflow/evidence/`, sửa, chạy lại check |
-| Check gọi file .cmd/.bat với tham số chứa ký tự đặc biệt | Tham số có `" % ! ^ & | < >` | Bọc lệnh trong một script riêng trong repo |
+| Check gọi file .cmd/.bat với tham số chứa ký tự đặc biệt | Tham số có `" % ! ^ & \| < >` | Bọc lệnh trong một script riêng trong repo |
 | Check ID không nằm trong plan đã duyệt | Check mới chưa có trong plan | Thêm vào plan qua Finalize và duyệt lại |
 | Working tree phải sạch trước review/handoff | Còn file chưa commit (thường là build output chưa ignore) | Commit, hoặc thêm thư mục build vào `.gitignore` |
 | Code khác revision implement đã kiểm tra | Có commit mới sau `record implement` | Chạy lại checks, `record implement`, rồi review |

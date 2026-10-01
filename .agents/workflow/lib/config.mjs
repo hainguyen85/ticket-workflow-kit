@@ -84,6 +84,34 @@ export function ticketName(value) {
   return segment(value)
 }
 
+// Ticket types and the prefix each gives to a generated key (REQ-260930-1415). One type may be
+// the change-request type: a ticket of that type follows up on work that was already handed off.
+export function ticketTypes(value = {}) {
+  const types = value.types ?? { req: 'REQ', cr: 'CR' }
+  if (!types || typeof types !== 'object' || Array.isArray(types) || !Object.keys(types).length)
+    fail('tickets.types phải là object {loại: PREFIX} không rỗng.')
+  const prefixes = Object.values(types)
+  if (
+    Object.keys(types).some((name) => !/^[a-z][a-z0-9-]{0,19}$/.test(name)) ||
+    prefixes.some((prefix) => typeof prefix !== 'string' || !/^[A-Z][A-Z0-9]{1,9}$/.test(prefix)) ||
+    new Set(prefixes).size !== prefixes.length
+  )
+    fail(
+      'tickets.types: tên loại là chữ thường; prefix gồm 2–10 chữ hoa/số, bắt đầu bằng chữ và không trùng nhau.',
+    )
+  const defaultType = value.defaultType ?? Object.keys(types)[0]
+  if (!Object.hasOwn(types, defaultType)) fail('tickets.defaultType không có trong tickets.types.')
+  const changeRequestType =
+    value.changeRequestType === undefined
+      ? Object.hasOwn(types, 'cr')
+        ? 'cr'
+        : null
+      : value.changeRequestType
+  if (changeRequestType !== null && !Object.hasOwn(types, changeRequestType))
+    fail('tickets.changeRequestType không có trong tickets.types.')
+  return { types, defaultType, changeRequestType }
+}
+
 async function readJson(file, label) {
   let stat
   try {
@@ -130,6 +158,9 @@ export async function loadConfig(root = repoRoot) {
   const timeoutSeconds = config.checks?.timeoutSeconds ?? 600
   if (!Number.isInteger(timeoutSeconds) || timeoutSeconds < 1 || timeoutSeconds > 7200)
     fail('checks.timeoutSeconds phải là số nguyên từ 1 đến 7200.')
+  if (config.tickets !== undefined && (typeof config.tickets !== 'object' || !config.tickets))
+    fail('tickets phải là một object.')
+  const tickets = ticketTypes(config.tickets)
   if (Object.keys(local).some((key) => key !== 'docsRepo'))
     fail(`${LOCAL_FILE} chỉ hỗ trợ khóa docsRepo.`)
   if (typeof local.docsRepo !== 'string' || !path.isAbsolute(local.docsRepo))
@@ -162,6 +193,7 @@ export async function loadConfig(root = repoRoot) {
       git: { remote, baseBranch, protectedBranches: [...new Set([...protectedBranches, baseBranch])] },
       docs: { ticketsPath },
       checks: { timeoutSeconds },
+      tickets,
     },
     docsRepo,
     docsRoot,

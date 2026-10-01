@@ -33,27 +33,33 @@ import { nextAction } from './lib/dispatch.mjs'
 
 const usage = `Dùng: ${CLI} <lệnh>
   setup | doctor | list
-  sync --title <tiêu đề> --slug <slug> [--key <key>] [--file <path>]... [--chat <path>]
-  sync <ticket> [--file <path>]... [--chat <path>]
+  sync --title <tiêu đề> --slug <slug> [--type <loại>] [--key <key>] [--relates-to <ticket>]
+       [--file <path>]... [--chat <path>]
+  sync <ticket> [--file <path>]... [--chat <path>] [--reopen]
   status <ticket> | next <ticket>
   record <ticket> <stage> <input.json>
   can-implement <ticket> | start <ticket> | check <ticket> <check-id>
   prepare <ticket> <mr.json> | handoff <ticket> [mr-url]`
 
+const valued = ['--title', '--slug', '--key', '--type', '--relates-to', '--file', '--chat']
 function parseSync(args) {
-  const options = { files: [], chat: null, positional: [] }
+  const options = { files: [], chat: null, positional: [], reopen: false }
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]
+    if (arg === '--reopen') {
+      options.reopen = true
+      continue
+    }
     if (!arg.startsWith('--')) {
       options.positional.push(arg)
       continue
     }
     const value = args[++i]
-    if (value === undefined || !['--title', '--slug', '--key', '--file', '--chat'].includes(arg))
+    if (value === undefined || !valued.includes(arg))
       fail(usage)
     if (arg === '--file') options.files.push(value)
     else {
-      const name = arg.slice(2)
+      const name = arg === '--relates-to' ? 'relatesTo' : arg.slice(2)
       if (options[name] !== undefined && options[name] !== null) fail(`Trùng tham số ${arg}.`)
       options[name] = value
     }
@@ -180,6 +186,8 @@ try {
           tickets.push({
             ticket,
             title: state.title,
+            type: state.type,
+            relatesTo: state.relatesTo ?? null,
             revision: state.revision,
             stages: Object.fromEntries(
               Object.entries(state.stages).map(([name, record]) => [name, record.status]),
@@ -196,15 +204,22 @@ try {
       const sources = await readSources(options)
       let synced
       if (options.positional.length) {
-        if (options.title || options.slug || options.key)
-          fail('Ticket đã có: không đổi title/slug/key khi sync thêm nguồn.')
+        if (options.title || options.slug || options.key || options.type || options.relatesTo)
+          fail('Ticket đã có: không đổi title/slug/key/type/relates-to khi sync thêm nguồn.')
         const ticket = await resolveTicket(settings, options.positional[0])
-        synced = await syncTicket(settings, ticket, sources)
+        synced = await syncTicket(settings, ticket, sources, { reopen: options.reopen })
       } else {
         if (!options.title || !options.slug) fail('Ticket mới cần --title và --slug.')
+        if (options.reopen) fail('--reopen chỉ dùng khi sync thêm nguồn vào ticket đã bàn giao.')
         synced = await createTicket(
           settings,
-          { key: options.key ?? undefined, slug: options.slug, title: options.title },
+          {
+            key: options.key ?? undefined,
+            slug: options.slug,
+            title: options.title,
+            type: options.type ?? undefined,
+            relatesTo: options.relatesTo ?? undefined,
+          },
           sources,
         )
       }
@@ -223,6 +238,8 @@ try {
         result = {
           target,
           title: state.title,
+          type: state.type,
+          relatesTo: state.relatesTo ?? null,
           snapshot: state.snapshot,
           ...next,
           ...(await intakeStatus(settings, ticket)),

@@ -88,7 +88,8 @@ test('CLI needs only node: setup, doctor, sync from chat, record and status', as
   const created = run('sync', '--title', 'Tìm kiếm ghi chú', '--slug', 'note-search', '--chat', chat)
   assert.equal(created.status, 0, created.stderr)
   const ticket = created.json.ticket
-  assert.match(ticket, /^\d{6}-\d{4}-note-search$/)
+  assert.match(ticket, /^REQ-\d{6}-\d{4}-note-search$/)
+  assert.equal(created.json.type, 'req')
   assert.equal(created.json.changed, true)
   assert.equal(created.json.docsMissing, true)
   assert.deepEqual(created.json.sourceIds, ['r1/chat.md'])
@@ -98,7 +99,7 @@ test('CLI needs only node: setup, doctor, sync from chat, record and status', as
     note: 'Commit và push repo hồ sơ để chia sẻ thay đổi với team.',
   })
   assert.equal(created.json.target.ticket, ticket)
-  const key = ticket.slice(0, 11)
+  const key = ticket.slice(0, 15)
   assert.equal(run('status', key).json.next, 'sync')
   assert.equal(run('sync', key).json.changed, false)
   assert.match(run('sync', key, '--title', 'Other').stderr, /không đổi title/)
@@ -220,6 +221,42 @@ test('CLI carries a ticket from a file source through to a verified handoff', as
   assert.equal(done.status, 0, done.stderr)
   assert.equal(done.json.readiness, 'handed-off-awaiting-leader')
   assert.equal(run('status', ticket).json.next, 'handed-off')
+  // A change request after handoff is a new CR ticket linked to the delivered one.
+  const more = await tmp('cr.md', 'Tìm cả trong ghi chú đã lưu trữ.\n')
+  const refused = run('sync', ticket, '--chat', more)
+  assert.equal(refused.status, 1)
+  assert.match(refused.stderr, /^Task: Ticket đã bàn giao/)
+  assert.match(run('sync', '--title', 'x', '--slug', 'a-b', '--type', 'bug', '--chat', more).stderr, /Loại ticket/)
+  assert.match(run('sync', '--title', 'x', '--slug', 'a-b', '--chat', more, '--reopen').stderr, /--reopen/)
+  const followUp = run(
+    'sync',
+    '--type',
+    'cr',
+    '--relates-to',
+    ticket,
+    '--title',
+    'Tìm trong ghi chú lưu trữ',
+    '--slug',
+    'search-archived',
+    '--chat',
+    more,
+  )
+  assert.equal(followUp.status, 0, followUp.stderr)
+  assert.match(followUp.json.ticket, /^CR-\d{6}-\d{4}-search-archived$/)
+  assert.equal(followUp.json.type, 'cr')
+  assert.equal(followUp.json.relatesTo, 'PRJ-7-note-search')
+  const listed = run('list').json.tickets
+  assert.deepEqual(
+    listed.map((item) => [item.type, item.relatesTo]),
+    [
+      ['cr', 'PRJ-7-note-search'],
+      ['req', null],
+    ],
+  )
+  assert.equal(run('status', 'CR').json.relatesTo, 'PRJ-7-note-search')
+  const reopened = run('sync', ticket, '--chat', more, '--reopen')
+  assert.equal(reopened.status, 0, reopened.stderr)
+  assert.equal(reopened.json.revision, 2)
   assert.equal(git(settings.repoRoot, ['status', '--porcelain']), '')
 })
 test('CLI rejects unknown commands, wrong arity and unknown tickets without leaking details', async (t) => {

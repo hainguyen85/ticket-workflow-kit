@@ -14,6 +14,7 @@ export const config = () => ({
   git: { remote: 'origin', baseBranch: 'main', protectedBranches: ['main'] },
   docs: { ticketsPath: 'docs/tickets' },
   checks: { timeoutSeconds: 60 },
+  tickets: { types: { req: 'REQ', cr: 'CR' }, defaultType: 'req', changeRequestType: 'cr' },
 })
 
 // A source repo with a real bare remote, plus a documents repo checkout: separate by default,

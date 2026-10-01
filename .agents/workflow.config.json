@@ -3,12 +3,22 @@
   "git": {
     "remote": "origin",
     "baseBranch": "main",
-    "protectedBranches": ["main"]
+    "protectedBranches": [
+      "main"
+    ]
   },
   "docs": {
     "ticketsPath": "docs/tickets"
   },
   "checks": {
     "timeoutSeconds": 600
+  },
+  "tickets": {
+    "types": {
+      "req": "REQ",
+      "cr": "CR"
+    },
+    "defaultType": "req",
+    "changeRequestType": "cr"
   }
 }

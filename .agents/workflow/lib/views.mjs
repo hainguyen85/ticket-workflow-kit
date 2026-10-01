@@ -107,8 +107,11 @@ export async function currentViews(directory, state, snapshot) {
   const artifacts = {}
   for (const stage of ['intake', 'analysis', 'finalize', 'implement', 'review', 'handoff'])
     artifacts[stage] = await content(directory, state.stages[stage])
+  const related = state.relatesTo
+    ? ` | Liên quan: [${state.relatesTo}](../${state.relatesTo}/TASK.md)`
+    : ''
   const header = (label) =>
-    `# ${state.ticket} — ${label}\n\nRequirement revision: ${state.revision} | Nguồn: request/ (${currentItems(snapshot).length} mục hiện hành)\n\n`
+    `# ${state.ticket} — ${label}\n\nRequirement revision: ${state.revision} | Loại: ${state.type}${related} | Nguồn: request/ (${currentItems(snapshot).length} mục hiện hành)\n\n`
   const marker = (stage) => `Trạng thái ${stage}: ${state.stages[stage].status}.\n\n`
   const pending = ['intake', 'analysis', 'finalize'].find(
     (stage) => state.stages[stage].status !== 'complete',

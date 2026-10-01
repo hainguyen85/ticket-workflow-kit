@@ -1,0 +1,2 @@
+#!/bin/sh
+exec node scripts/workflow/git-hook.mjs pre-commit

@@ -17,6 +17,7 @@ import {
   ticketName,
   ticketKey,
   ticketSlug,
+  ticketTypes,
   generatedKey,
 } from './config.mjs'
 import { hasSecret } from './policy.mjs'
@@ -165,7 +166,8 @@ export async function readState(directory, expected) {
     fail('state.json hỏng; giữ nguyên dữ liệu và phục hồi từ bản sao trước khi tiếp tục.')
   }
   if (
-    state.schemaVersion !== 2 ||
+    state.schemaVersion !== 3 ||
+    typeof state.type !== 'string' ||
     state.ticket !== expected.ticket ||
     state.ticket !== `${state.key}-${state.slug}` ||
     !Number.isSafeInteger(state.revision) ||
@@ -271,11 +273,39 @@ function ticketTitle(value) {
   return value.trim()
 }
 
-// The leader creates a ticket from files and/or chat text; later syncs add a change request.
-export async function createTicket(settings, { key, slug, title }, sources, now = new Date()) {
+// Handed off: the reviewed code was verified on the remote for the current requirement.
+export const handedOff = (state) =>
+  state.stages.handoff.status === 'complete' &&
+  state.stages.handoff.sourceRevision === state.revision
+
+// The leader creates a ticket from files and/or chat text. A change to a ticket still in
+// progress is a new revision of it (syncTicket); a change to handed-off work is a new ticket
+// of the change-request type that points back at the original.
+export async function createTicket(
+  settings,
+  { key, slug, title, type, relatesTo },
+  sources,
+  now = new Date(),
+) {
   ticketSlug(slug)
   title = ticketTitle(title)
   if (!sources.length) fail('Ticket mới cần ít nhất một nguồn --file hoặc --chat.')
+  const rules = ticketTypes(settings.config.tickets)
+  type ??= rules.defaultType
+  if (!Object.hasOwn(rules.types, type))
+    fail(`Loại ticket không hợp lệ; dùng một trong: ${Object.keys(rules.types).join(', ')}.`)
+  let related = null
+  if (relatesTo !== undefined && relatesTo !== null) {
+    related = await resolveTicket(settings, relatesTo)
+    const relatedState = await readState(await ticketDirectory(settings, related, false), {
+      ticket: related,
+    })
+    if (!relatedState) fail('Ticket liên quan chưa có hồ sơ hợp lệ.')
+    if (type === rules.changeRequestType && !handedOff(relatedState))
+      fail(
+        `Ticket ${related} chưa bàn giao: thay đổi yêu cầu là một revision của chính ticket đó (sync ${related} …), không phải ticket mới.`,
+      )
+  }
   const names = await listTickets(settings)
   const taken = (candidate) => names.some((name) => name.startsWith(`${candidate}-`))
   if (key !== undefined && key !== null) {
@@ -283,29 +313,35 @@ export async function createTicket(settings, { key, slug, title }, sources, now 
     if (taken(key)) fail('Đã có ticket dùng key này; sync thêm nguồn vào ticket đó nếu là CR.')
   } else {
     const time = new Date(now)
-    key = generatedKey(time)
+    const generated = () => `${rules.types[type]}-${generatedKey(time)}`
+    key = generated()
     while (taken(key)) {
       time.setMinutes(time.getMinutes() + 1)
-      key = generatedKey(time)
+      key = generated()
     }
   }
   const ticket = ticketName(`${key}-${slug}`)
   const directory = await ticketDirectory(settings, ticket)
   return withLock(directory, () =>
-    commitSources(directory, { ticket, key, slug, title }, sources, settings.author),
+    commitSources(
+      directory,
+      { ticket, key, slug, title, type, relatesTo: related },
+      sources,
+      settings.author,
+    ),
   )
 }
 
-export async function syncTicket(settings, ticket, sources = []) {
+export async function syncTicket(settings, ticket, sources = [], { reopen = false } = {}) {
   const directory = await ticketDirectory(settings, ticket, false)
   return withLock(directory, async () => {
     const state = await readState(directory, { ticket })
     if (!state) fail('Chưa có hồ sơ; tạo ticket bằng sync --title --slug trước.')
-    return commitSources(directory, state, sources, settings.author)
+    return commitSources(directory, state, sources, settings.author, { reopen })
   })
 }
 
-async function commitSources(directory, identity, sources, author) {
+async function commitSources(directory, identity, sources, author, { reopen = false } = {}) {
   for (const stage of ['sync', ...stages]) {
     const target = path.join(directory, stage)
     try {
@@ -315,7 +351,8 @@ async function commitSources(directory, identity, sources, author) {
     }
     await regular(target, true)
   }
-  const { ticket, key, slug, title } = identity
+  const { ticket, key, slug, title, type } = identity
+  const relatesTo = identity.relatesTo ?? null
   const old = await readState(directory, { ticket })
   const previous = old ? await readSnapshot(directory, old) : null
   const current = previous ? currentItems(previous) : []
@@ -332,6 +369,8 @@ async function commitSources(directory, identity, sources, author) {
     await projections(directory, old, previous)
     return {
       ticket,
+      type,
+      relatesTo,
       directory,
       revision: old.revision,
       changed: false,
@@ -339,6 +378,10 @@ async function commitSources(directory, identity, sources, author) {
       stages: old.stages,
     }
   }
+  if (old && handedOff(old) && !reopen)
+    fail(
+      `Ticket đã bàn giao: thay đổi yêu cầu sau bàn giao là ticket mới (sync --type <loại CR> --relates-to ${ticket} …). Nếu MR chưa merge và cần làm tiếp trên cùng branch, sync lại với --reopen.`,
+    )
   if (new Set(fresh.map((source) => source.name.toLowerCase())).size !== fresh.length)
     fail('Các nguồn trong một lần sync bị trùng tên.')
   const revision = (old?.revision ?? 0) + 1
@@ -390,11 +433,13 @@ async function commitSources(directory, identity, sources, author) {
   const at = new Date().toISOString()
   const state = {
     ...old,
-    schemaVersion: 2,
+    schemaVersion: 3,
     ticket,
     key,
     slug,
     title,
+    type,
+    relatesTo,
     revision,
     sourceHash,
     snapshot: relativeSnapshot,
@@ -422,5 +467,14 @@ async function commitSources(directory, identity, sources, author) {
   } else await writeFile(snapshotFile, serialize(snapshot), { flag: 'wx', mode: 0o600 })
   await atomicWrite(path.join(directory, 'state.json'), serialize(state))
   await projections(directory, state, snapshot)
-  return { ticket, directory, revision, changed: true, changes, stages: state.stages }
+  return {
+    ticket,
+    type,
+    relatesTo,
+    directory,
+    revision,
+    changed: true,
+    changes,
+    stages: state.stages,
+  }
 }

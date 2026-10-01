@@ -12,9 +12,12 @@ Leader tạo ticket: chạy Sync và Analyze, rồi chia sẻ repo hồ sơ. Dev
 
 ## Ticket ID
 
-`<key>-<slug>`, ví dụ `260930-1415-note-search` hoặc `PRJ-123-note-search`.
+`<key>-<slug>`, ví dụ `REQ-260930-1415-note-search`, `CR-261002-0900-search-filter` hoặc `GL-123-note-search`.
 
-- **key**: mã từ hệ thống ngoài nếu nguồn có (`--key`, chữ/số nối bằng `-` `_` `.`, tối đa 40 ký tự); nếu không, helper tạo từ thời điểm tạo ticket theo giờ local `YYMMDD-HHMM`. Trùng phút thì helper lấy phút kế tiếp.
+- **Loại ticket** (`--type`): khai trong `tickets.types` của `.agents/workflow.config.json`, mỗi loại một prefix. Mặc định `req` → `REQ` (yêu cầu mới) và `cr` → `CR` (thay đổi yêu cầu sau bàn giao). Không truyền thì dùng `tickets.defaultType`. Loại được ghi vào hồ sơ và hiển thị ở đầu ba view.
+- **key tự sinh**: `<PREFIX>-YYMMDD-HHMM` theo giờ local lúc tạo, prefix lấy từ loại ticket. Trùng phút thì helper lấy phút kế tiếp.
+- **key ngoài** (`--key`): khi nguồn mang mã của hệ thống khác, ví dụ issue GitLab/Redmine (`GL-123`, `RM-456`) hay mã Jira. Chữ/số nối bằng `-` `_` `.`, tối đa 40 ký tự; được dùng nguyên vẹn, không thêm prefix của loại.
+- **Liên kết** (`--relates-to <ticket>`): ghi ticket mà ticket mới nối tiếp; hiển thị thành link ở đầu view.
 - **slug**: agent đặt, 2–6 từ ASCII chữ thường nối bằng `-`, mô tả nội dung chính.
 - Mọi lệnh nhận ticket ID đầy đủ hoặc chỉ key khi key xác định đúng một ticket.
 - Branch source: `feature/<key>-<slug>`.
@@ -60,6 +63,7 @@ Sync copy nguồn vào `request/r<revision>/` rồi ghi manifest (tên, loại, 
 - **Source ID**: `r<revision>/<tên file>`, ví dụ `r1/spec.docx`, `r2/chat.md`.
 - **Nguồn hiện hành**: file trùng tên ở revision sau thay thế file cũ (file cũ vẫn giữ trong `request/` làm lịch sử); mỗi `chat.md` là bổ sung, không thay thế chat trước.
 - Sync lại cùng nội dung không tạo revision. Nguồn mới tạo revision mới và chuyển mọi stage sang `needs-revalidation`.
+- **Thay đổi yêu cầu (CR) đi theo trạng thái của ticket.** Ticket chưa bàn giao: CR là revision của chính ticket đó (`sync <ticket> …`), để plan, approval và evidence bị buộc kiểm lại; tạo ticket loại CR với `--relates-to` tới một ticket chưa bàn giao bị từ chối. Ticket đã bàn giao (handoff `complete`): `sync <ticket>` kèm nguồn mới bị từ chối; CR là ticket mới loại CR, có branch và MR riêng, `--relates-to` ticket gốc. Ngoại lệ phải nêu rõ: `sync <ticket> … --reopen` khi MR chưa merge và công việc tiếp tục trên cùng branch.
 - `request/` hoặc manifest bị sửa/thiếu thì mọi lệnh dừng; phục hồi từ Git của repo hồ sơ. `request/r<N>` tồn tại mà state chưa ghi nhận (lần chạy bị ngắt) phải được dọn thủ công, helper không ghi đè.
 
 ### Phiên bản, author và changelog
@@ -80,8 +84,9 @@ Chạy ở root repo source bằng Node 22.12+ (nhánh 22 hoặc 24+). Không c�
 |---|---|
 | Setup / kiểm môi trường | `T setup`, `T doctor` |
 | Liệt kê ticket | `T list` |
-| Tạo ticket | `T sync --title "<tiêu đề>" --slug <slug> [--key <key>] [--file <path>]… [--chat <path>]` |
-| CR cho ticket đã có | `T sync <ticket> [--file <path>]… [--chat <path>]` |
+| Tạo ticket | `T sync --title "<tiêu đề>" --slug <slug> [--type <loại>] [--key <key>] [--relates-to <ticket>] [--file <path>]… [--chat <path>]` |
+| CR cho ticket chưa bàn giao | `T sync <ticket> [--file <path>]… [--chat <path>] [--reopen]` |
+| CR cho ticket đã bàn giao | `T sync --type cr --relates-to <ticket> --title "<tiêu đề>" --slug <slug> …` |
 | Trạng thái / next action | `T status <ticket>` (hoặc `next`) |
 | Ghi stage | `T record <ticket> <stage> .workflow-tmp/input.json` |
 | Kiểm approval | `T can-implement <ticket>` |
@@ -168,7 +173,7 @@ Dispatcher trả một next stage và reason: nguồn/intake thiếu → `sync`;
 
 Lỗi trong scope đã duyệt: tự sửa, chạy checks bị ảnh hưởng và required checks cần refresh. Thiếu quan sát: tự điều tra. Thiếu quyết định hoặc thay đổi scope/phương án đáng kể: trình delta rồi duyệt. Plan đã cho phép disposable DB/server/tests thì không hỏi lại từng thao tác trong phạm vi đó.
 
-CR sync giữ nguồn cũ và đánh dấu stages cần revalidate; trình phần thay đổi, không dựng lại toàn bộ văn bản. Runtime/code freshness kiểm độc lập nguồn yêu cầu.
+CR dạng revision giữ nguồn cũ và đánh dấu stages cần revalidate; trình phần thay đổi, không dựng lại toàn bộ văn bản. Runtime/code freshness kiểm độc lập nguồn yêu cầu.
 
 ## Handoff và bảo vệ
 

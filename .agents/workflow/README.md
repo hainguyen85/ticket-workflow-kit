@@ -20,7 +20,7 @@ CLI duy nhất: `node .agents/workflow/task.mjs`. Helpers chỉ dùng Node built
 
 ## State và phục hồi
 
-`.workflow/state.json` schema 2 là commit point. `revision` tăng khi có nguồn mới; `sourceHash` là SHA-256 của manifest nguồn `sync/<hash>.json`. Manifest liệt kê mọi nguồn từng được sync (ID, loại, kích thước, SHA-256); nội dung nằm trong `request/r<N>/`.
+`.workflow/state.json` schema 3 là commit point (có thêm `type` và `relatesTo` so với schema 2; hồ sơ schema cũ không được đọc âm thầm). `revision` tăng khi có nguồn mới; `sourceHash` là SHA-256 của manifest nguồn `sync/<hash>.json`. Manifest liệt kê mọi nguồn từng được sync (ID, loại, kích thước, SHA-256); nội dung nằm trong `request/r<N>/`.
 
 Thứ tự ghi khi sync: copy nguồn vào thư mục tạm rồi rename thành `request/r<N>` → ghi manifest → thay `state.json` bằng rename cùng filesystem → dựng lại `sync/source.md`, `changelog.md` và ba views. Ngắt trước commit point để lại `request/r<N>` chưa được state tham chiếu: helper dừng và yêu cầu dọn thủ công, không ghi đè. Ngắt sau commit point: chạy lại `sync <ticket>` để dựng lại các file dẫn xuất.
 

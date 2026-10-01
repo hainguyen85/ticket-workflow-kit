@@ -10,6 +10,7 @@ import {
   checkNode,
   ticketKey,
   ticketSlug,
+  ticketTypes,
   generatedKey,
 } from '../lib/config.mjs'
 import {
@@ -119,6 +120,48 @@ test('Node, key and slug validation reject unsupported runtime and traversal', (
   for (const slug of ['note-search', 'a-b-c-d-e-f', 'v2-api-paging']) ticketSlug(slug)
   assert.equal(generatedKey(new Date(2026, 8, 30, 14, 5)), '260930-1405')
 })
+test('ticket types map to key prefixes and are validated when configured', async (t) => {
+  assert.deepEqual(ticketTypes(), {
+    types: { req: 'REQ', cr: 'CR' },
+    defaultType: 'req',
+    changeRequestType: 'cr',
+  })
+  assert.deepEqual(ticketTypes({ types: { story: 'US', bug: 'BUG' }, defaultType: 'bug' }), {
+    types: { story: 'US', bug: 'BUG' },
+    defaultType: 'bug',
+    changeRequestType: null,
+  })
+  assert.equal(
+    ticketTypes({ types: { req: 'REQ', change: 'CHG' }, changeRequestType: 'change' })
+      .changeRequestType,
+    'change',
+  )
+  for (const invalid of [
+    { types: {} },
+    { types: [] },
+    { types: { req: 'req' } },
+    { types: { req: 'R' } },
+    { types: { REQ: 'REQ' } },
+    { types: { req: 'RE-Q' } },
+    { types: { req: 'REQ', cr: 'REQ' } },
+    { types: { req: 'REQ' }, defaultType: 'cr' },
+    { types: { req: 'REQ' }, changeRequestType: 'cr' },
+  ])
+    assert.throws(() => ticketTypes(invalid), /tickets\./)
+  const { settings } = await configured(t)
+  const file = path.join(settings.repoRoot, '.agents/workflow.config.json')
+  assert.deepEqual((await loadConfig(settings.repoRoot)).config.tickets.types, {
+    req: 'REQ',
+    cr: 'CR',
+  })
+  await writeFile(
+    file,
+    JSON.stringify({ schemaVersion: 3, tickets: { types: { req: 'REQ', bug: 'BUG' } } }),
+  )
+  assert.equal((await loadConfig(settings.repoRoot)).config.tickets.changeRequestType, null)
+  await writeFile(file, JSON.stringify({ schemaVersion: 3, tickets: { types: { req: 'x' } } }))
+  await assert.rejects(loadConfig(settings.repoRoot), /tickets\.types/)
+})
 test('redacts known credentials and private key blocks', () => {
   const input = `${token} GH_TOKEN="${['other', 'secret'].join('-')}" api_key=abc password: xyz\n${'-----BEGIN ' + 'OPENSSH PRIVATE KEY-----'}\nprivate-data\n${'-----END ' + 'OPENSSH PRIVATE KEY-----'}`
   const safe = redact(input)
@@ -144,22 +187,43 @@ test('ticket ID is the external key or the creation time, followed by the slug',
     first(),
     now,
   )
-  assert.equal(generated.ticket, '260930-1415-note-search')
+  assert.equal(generated.ticket, 'REQ-260930-1415-note-search')
+  assert.equal(generated.type, 'req')
   const bumped = await createTicket(
     settings,
     { slug: 'note-export', title: 'Note export' },
     first(),
     now,
   )
-  assert.equal(bumped.ticket, '260930-1416-note-export')
+  assert.equal(bumped.ticket, 'REQ-260930-1416-note-export')
+  // The prefix comes from the ticket type; each project lists its own types.
+  const custom = {
+    ...settings,
+    config: { ...settings.config, tickets: { types: { req: 'REQ', bug: 'BUG' } } },
+  }
+  const bug = await createTicket(
+    custom,
+    { slug: 'wrong-total', title: 'Wrong total', type: 'bug' },
+    first(),
+    now,
+  )
+  assert.equal(bug.ticket, 'BUG-260930-1415-wrong-total')
+  assert.equal(bug.type, 'bug')
+  await assert.rejects(
+    createTicket(settings, { slug: 'other-kind', title: 'x', type: 'bug' }, first(), now),
+    /Loại ticket không hợp lệ/,
+  )
+  // An external key is used as it is; the type is still recorded.
+  assert.equal(external.type, 'req')
   assert.deepEqual(await listTickets(settings), [
-    '260930-1415-note-search',
-    '260930-1416-note-export',
+    'BUG-260930-1415-wrong-total',
+    'REQ-260930-1415-note-search',
+    'REQ-260930-1416-note-export',
     'T-1-search-articles',
   ])
   assert.equal(await resolveTicket(settings, 'T-1'), 'T-1-search-articles')
-  assert.equal(await resolveTicket(settings, '260930-1416'), '260930-1416-note-export')
-  await assert.rejects(resolveTicket(settings, '260930'), /nhiều hồ sơ/)
+  assert.equal(await resolveTicket(settings, 'REQ-260930-1416'), 'REQ-260930-1416-note-export')
+  await assert.rejects(resolveTicket(settings, 'REQ-260930'), /nhiều hồ sơ/)
   await assert.rejects(resolveTicket(settings, 'T-9'), /Không tìm thấy/)
   for (const invalid of [
     { slug: 'single', title: 'x' },

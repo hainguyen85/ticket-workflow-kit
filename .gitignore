@@ -12,3 +12,4 @@
 .claude/settings.local.json
 # Per-machine links to .agents/skills, created by `task.mjs setup`
 .claude/skills/task-*
+*.stackdump

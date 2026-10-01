@@ -4,7 +4,7 @@ import { mkdir, writeFile, readFile, rm, cp, symlink } from 'node:fs/promises'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { env as environment } from 'node:process'
-import { syncTicket } from '../lib/vault.mjs'
+import { syncTicket, createTicket } from '../lib/vault.mjs'
 import { chatSource } from '../lib/source.mjs'
 import {
   recordStage,
@@ -250,6 +250,45 @@ test('handoff is prepared by the helper, pushed by the developer, then verified 
   const checks = await readFile(path.join(path.dirname(directory), 'CHECKS.md'), 'utf8')
   assert.match(checks, /merge_requests\/2/)
   assert.match(checks, /đã xác minh trên remote/)
+})
+test('a change before handoff is a revision; after handoff it is a linked change-request ticket', async (t) => {
+  const { settings, ticket, branch } = await fixture(t)
+  await throughReview(settings, ticket)
+  const change = () => [chatSource('Also search in descendants.')]
+  const followUp = { slug: 'search-descendants', title: 'Search descendants' }
+  // Still in progress: a CR ticket would bypass the revalidation of this ticket.
+  await assert.rejects(
+    createTicket(settings, { ...followUp, type: 'cr', relatesTo: ticket }, change()),
+    /chưa bàn giao/,
+  )
+  await assert.rejects(
+    createTicket(settings, { ...followUp, type: 'cr', relatesTo: 'T-404' }, change()),
+    /Không tìm thấy/,
+  )
+  await prepareHandoff(settings, ticket, mrInput)
+  git(settings.repoRoot, ['push', 'origin', branch])
+  await completeHandoff(settings, ticket)
+  // Handed off: the delivered ticket stays as it is; the change is its own ticket.
+  await assert.rejects(syncTicket(settings, ticket, change()), /Ticket đã bàn giao/)
+  assert.equal((await syncTicket(settings, ticket)).changed, false)
+  const created = await createTicket(
+    settings,
+    { ...followUp, type: 'cr', relatesTo: 'T-1' },
+    change(),
+  )
+  assert.match(created.ticket, /^CR-\d{6}-\d{4}-search-descendants$/)
+  assert.equal(created.type, 'cr')
+  assert.equal(created.relatesTo, ticket)
+  const { directory, state } = await context(settings, created.ticket)
+  assert.equal(state.relatesTo, ticket)
+  assert.equal(state.stages.intake.status, 'not-started')
+  const task = await readFile(path.join(path.dirname(directory), 'TASK.md'), 'utf8')
+  assert.match(task, /Loại: cr \| Liên quan: \[T-1-search-articles\]\(\.\.\/T-1-search-articles\/TASK\.md\)/)
+  assert.equal((await nextAction(settings, ticket)).next, 'handed-off')
+  // The explicit exception: the MR is not merged and work continues on the same branch.
+  const reopened = await syncTicket(settings, ticket, change(), { reopen: true })
+  assert.equal(reopened.revision, 2)
+  assert.equal((await nextAction(settings, ticket)).next, 'sync')
 })
 test('an unreachable remote is reported and never recorded as handed off', async (t) => {
   const { settings, ticket } = await fixture(t)
