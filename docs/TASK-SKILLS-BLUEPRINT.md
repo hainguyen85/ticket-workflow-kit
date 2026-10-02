@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Phiên bản blueprint | 1.11 (2026-10-02) |
+| Phiên bản blueprint | 1.12 (2026-10-02) |
 | Trạng thái | Đã thực hiện; code trong repo này là bản tham chiếu |
 | Người đọc | Agent AI hoặc kỹ sư phải thực hiện lại việc chuyển đổi, hoặc cải tiến bộ kit về sau |
 
@@ -106,7 +106,7 @@ Những chỗ bản gốc gắn với thứ team không dùng:
 ```text
 <repo source>/
 ├── .agents/
-│   ├── skills/task-{sync,analyze,finalize,implement,review,handoff}/   # bản skill duy nhất
+│   ├── skills/task-{sync,analyze,finalize,implement,review,handoff,retro}/   # bản skill duy nhất
 │   ├── workflow/
 │   │   ├── task.mjs                 # CLI duy nhất
 │   │   ├── lib/*.mjs                # 16 module (mục 5)
@@ -176,6 +176,7 @@ Không còn: `package.json`, `scripts/`, `tests/` ở root, `workshop.config.jso
 ```text
 <docsRoot>/<key>-<slug>/
 ├── TASK.md  PLAN.md  CHECKS.md          # view dựng từ record
+├── RETRO.md                             # tùy chọn; Markdown thường do task-retro viết, ngoài state
 ├── request/r<N>/<tên file> | chat.md    # nguồn theo revision
 └── .workflow/
     ├── state.json                       # commit point
@@ -386,6 +387,7 @@ Git hooks giữ nguyên bản gốc, chỉ đổi đường dẫn script và ngu
 | `docs/workflow/CONTRACT.md`, `RTK.md`, `scripts/workflow/README.md` | `.agents/workflow/` | CONTRACT viết lại (v4); README viết lại; RTK chuyển chỗ |
 | – | `.agents/workflow/GLOSSARY-ADR.md` | Mới (v1.11): định dạng và quy tắc viết glossary, ADR |
 | `.agents/skills/task-release` | `.agents/skills/task-handoff` | Đổi tên và viết lại; 5 skill còn lại sửa theo mục 6 |
+| – | `.agents/skills/task-retro` | Mới (v1.12): skill ngoài luồng, mục 6 |
 | `.codex/hooks.json`, `.githooks/*` | giữ chỗ | Sửa đường dẫn script |
 | – | `.claude/settings.json`, phần đầu `CLAUDE.md` | Mới |
 | `workshop.config.json`, `.agents/.env.workflow.example`, `package.json` | `.agents/workflow.config.json`, `.agents/workflow.local.example.json` | Thay thế; xóa `package.json` |
@@ -418,6 +420,7 @@ Phần chung của mọi skill:
 | `task-implement` | Như bản gốc. `start <ticket>` không còn tham số slug; timeout là một dạng fail. Không push, không MR. Ticket loại `bug`: log gỡ lỗi tạm mang một tiền tố riêng của ticket, gỡ sạch trước commit; checks.md ghi nguyên nhân đã xác định. |
 | `task-review` | Như bản gốc; bước tiếp là Handoff. Thêm: review theo hai trục tách riêng — **Yêu cầu** (thiếu/thừa/sai so với AC, plan, delivery; chất lượng của chính các check) và **Chuẩn code** (chuẩn đã viết của repo + danh sách smell nền, smell luôn là nhận định) — mỗi trục một lượt đọc (subagent riêng khi có), báo dưới hai tiêu đề, mỗi finding ghi `axis`. Chi tiết trong `references/review-axes.md`. |
 | `task-handoff` | Soạn title/body MR (trung lập, `Refs <key>`). Chạy `prepare`. Đưa developer lệnh push và nội dung MR. Sau khi developer báo đã push, chạy `handoff <ticket> [mr-url]`. Chưa xác minh được thì báo đúng trạng thái `prepared`. Body MR theo mẫu trong skill: Tóm tắt (hình nhỏ nhất), Bằng chứng trước/sau từ check đã chạy, Mức nguy hiểm khi merge (đảo ngược, phạm vi ảnh hưởng), Vận hành và giới hạn, `Refs <key>`. Ticket loại `bug`: mục Tóm tắt nêu nguyên nhân đã xác định. |
+| `task-retro` | Ngoài sáu stage; chạy khi người dùng yêu cầu, sau review hoặc handoff (D24). Chỉ theo ba phần "Bắt đầu", "Chia sẻ hồ sơ", "Kết thúc" của quy ước chung; không ghi record. Giữ `next` và status các stage trước khi làm và đối chiếu lại sau khi ghi. Thu thập sự việc từ hội thoại của phiên, CHECKS.md, changelog của PLAN.md và log check fail; mỗi sự việc có căn cứ. Xếp mỗi sự việc vào đúng một trong bốn loại: lỗi máy móc → check tự động hoặc Git hook (đọc check sẵn có của repo trước); lỗi phán đoán → quy tắc trong chuẩn code; tìm thông tin chậm → một dòng chỉ đường trong AGENTS.md; chỉ dẫn không đổi hành vi → đề xuất xóa. Xếp theo mức nghiêm trọng. Ghi `<target.documents>/<ticket>/RETRO.md` theo mẫu trong skill; file đã có thì thêm mục mới. Chỉ đề xuất, không tự sửa môi trường. |
 
 ---
 
@@ -471,14 +474,14 @@ Hành vi mà bộ test PHẢI phủ (tên test hiện tại diễn đạt đúng
 | Kiểm chứng | Không tự khai pass; exit khác 0; thiếu file thực thi; timeout bị kill; check sửa source; `.cmd` trên Windows; phân giải lệnh; fingerprint qua commit giống hệt; line ending; hồ sơ không ảnh hưởng fingerprint (ngoài repo và trong repo đã ignore); context đổi; log bị sửa; delivery runtime cần smoke tại target. |
 | Bàn giao | Chặn file ngoài plan, base chưa được chứa; prepare không push; `handoff` từ chối khi chưa push, nhận sau khi push; URL không hợp lệ; remote không tới được; CR sau prepare. |
 | Policy và hook | Metadata trung lập nhưng cho phép "ai" tiếng Việt; mẫu secret; hook chặn/cho qua đúng ca; phạm vi theo loại tool; launcher của cả hai runtime từ thư mục con; `CLAUDE_PROJECT_DIR`; fail closed khi thiếu kit; Git hook thật với bare remote; hooksPath có sẵn không bị thay. |
-| Liên kết skill | Tạo, idempotent, không ghi đè thư mục thật, sửa liên kết hỏng, xóa liên kết không xóa đích; `doctor` dừng khi liên kết chưa ignore. |
-| CLI | Chỉ cần `node`; luồng chat → intake; luồng file → handoff đã xác minh; sai lệnh/sai số tham số; không lộ đường dẫn trong lỗi; worktree của repo source luôn sạch sau khi helper ghi hồ sơ; `target.glossary` và `target.adr` trong `doctor`/`sync`/`status`; `uncommitted` bật khi glossary hoặc ADR đổi, không bật vì file khác trong repo hồ sơ. |
+| Liên kết skill | Tạo, idempotent, không ghi đè thư mục thật, sửa liên kết hỏng, xóa liên kết không xóa đích; `doctor` dừng khi liên kết chưa ignore; danh sách skill được liên kết gồm cả `task-retro`. |
+| CLI | Chỉ cần `node`; luồng chat → intake; luồng file → handoff đã xác minh; sai lệnh/sai số tham số; không lộ đường dẫn trong lỗi; worktree của repo source luôn sạch sau khi helper ghi hồ sơ; `target.glossary` và `target.adr` trong `doctor`/`sync`/`status`; `uncommitted` bật khi glossary hoặc ADR đổi, không bật vì file khác trong repo hồ sơ; `RETRO.md` ghi thẳng vào thư mục ticket làm `uncommitted` bật mà `next` và status các stage không đổi. |
 
 Kiểm tay sau khi cài vào một repo thật:
 
 1. `setup` rồi `doctor` không lỗi; `baseRef: present`.
 2. Trong Codex và Claude Code: gõ một prompt chứa chuỗi giống token → bị chặn; yêu cầu agent push → bị chặn.
-3. Claude Code session mới liệt kê 6 skill `task-*`.
+3. Claude Code session mới liệt kê 7 skill `task-*`.
 4. Chạy một ticket thử với lệnh check Maven/Gradle thật, có `timeoutSeconds`.
 
 ---
@@ -583,6 +586,7 @@ Kiểm tay sau khi cài vào một repo thật:
 
 | Phiên bản | Ngày | Thay đổi |
 |---|---|---|
+| 1.12 | 2026-10-02 | **Thực hiện mục 13.4-D (gói G4):** skill mới `task-retro` (ngoài sáu stage, ghi `RETRO.md` trong thư mục ticket, bốn loại đề xuất, không đổi state); test liên kết skill tính 7 skill; một kiểm tra CLI rằng `RETRO.md` không đổi `next`/status và được tính vào `uncommitted`. Helper không đổi. Mục 3, 4.3, 5, 6, 8, 13 cập nhật theo. |
 | 1.11 | 2026-10-02 | **Thực hiện mục 13.4-C (gói G3):** hai khóa `docs.glossaryPath`, `docs.adrPath` (kiểm dạng đường dẫn, nằm ngoài thư mục ticket, quy tắc ignore khi nằm trong repo source); `target.glossary` và `target.adr` trong kết quả lệnh; `docsRepo.uncommitted` tính cả hai đường dẫn; file tham chiếu `.agents/workflow/GLOSSARY-ADR.md`; bước "Chốt thuật ngữ" và đề nghị ADR trong `task-analyze`; việc đọc glossary đưa vào quy ước chung. Thêm D28, D29. Mục 3, 4.1, 4.10, 5, 6, 8, 9, 10, 11, 13 cập nhật theo. **Thay đổi hành vi:** hồ sơ đặt trực tiếp trong `docs/tickets` của repo source nay phải ignore thêm `docs/GLOSSARY.md` và `docs/adr/`. |
 | 1.10 | 2026-10-02 | **Thực hiện mục 13.4-B (gói G2):** thêm loại `bug` → `BUG` vào `workflow.config.json` đi kèm bộ kit; nhánh ticket bug trong `task-sync` (tóm tắt bốn mục), `task-analyze` (lần từ stack trace vào code, giả thuyết kèm dự đoán), `task-finalize` (test hồi quy), `task-implement` (tiền tố log gỡ lỗi, ghi nguyên nhân), `task-handoff` (nguyên nhân trong MR); một test cho file config đi kèm. Helper không đổi. Mục 4.1, 6, 8, 10, 13.2 và 13.4 cập nhật theo. |
 | 1.9 | 2026-10-02 | **Thực hiện mục 13.4-A (gói G1):** viết lại 6 skill với điều kiện hoàn thành cho từng bước và description nêu khi nào dùng; đưa phần lặp lại vào mục "Quy ước chung cho mọi bước" của CONTRACT; xóa 6 file `references/*-contract.md`. Mục 6 cập nhật theo. Hành vi và thứ tự bước không đổi. |
@@ -628,7 +632,7 @@ Người dùng ──gọi──> task-*  (khung: stage, cổng, evidence, hồ 
 | mọi skill | Viết lại theo nguyên tắc viết cho agent | `writing-for-agents` | Đã làm (v1.9) |
 | sync, analyze | Phân tích bug từ mô tả lỗi, stack trace và source code; giả thuyết kiểm được | `diagnosing-bugs` (chỉ lấy phần giả thuyết và dọn log; bỏ phần lệnh tái hiện) | Đã làm (v1.10) |
 | analyze | Glossary và ADR, lưu trong repo hồ sơ | `domain-modeling` | Đã làm (v1.11) |
-| sau handoff | Nhìn lại, cải thiện môi trường của agent; kết quả là tài liệu | `retro` | Kế hoạch (13.4-D) |
+| sau handoff | Nhìn lại, cải thiện môi trường của agent; kết quả là tài liệu | `retro` | Đã làm (v1.12) |
 | sync, analyze | Bảng câu hỏi gửi người ngoài | `to-questionnaire` | Kế hoạch (13.4-E) |
 
 ### 13.3 Đã đưa vào (v1.2)
@@ -688,7 +692,7 @@ Theo D22 và R20: ticket BUG đi đúng luồng và đúng cổng của mọi ti
 - `task-analyze` là nơi **chủ động** làm việc này: đối chiếu thuật ngữ trong yêu cầu với glossary, hỏi lại khi một từ đang mang hai nghĩa, cập nhật glossary ngay khi một thuật ngữ được chốt. Các skill khác chỉ **đọc** glossary để đặt tên trong plan, code, test và nội dung MR.
 - Nghiệm thu: sau một ticket thử, glossary có thuật ngữ mới của ticket đó và worktree của repo source vẫn sạch.
 
-**D. Bước nhìn lại (`task-retro`).** Skill mới; **không sửa helper**.
+**D. Bước nhìn lại (`task-retro`). — ĐÃ LÀM (v1.12).** Skill mới; **không sửa helper**. Còn phải kiểm tay: chạy skill trên một ticket thử đã review.
 
 Đã quyết (D24): kết quả **chỉ là tài liệu**, không phải stage và không có record.
 

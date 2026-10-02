@@ -7,7 +7,7 @@
 Copy các mục sau vào root repo source và commit:
 
 ```text
-.agents/skills/            # 6 skills task-*
+.agents/skills/            # 7 skills task-* (6 bước của luồng và task-retro)
 .agents/workflow/          # CLI, helpers, CONTRACT, tests
 .agents/TASK-SKILLS-GUIDE.md  # tài liệu training về kiến trúc và workflow
 .agents/CREDITS.md         # ghi công các kỹ thuật phỏng theo nguồn ngoài
@@ -85,6 +85,7 @@ Không có token nào cần cấu hình: helper không gọi API hosting. Fetch/
     ├── TASK.md        # Yêu cầu, hiện trạng, quyết định và bước tiếp theo
     ├── PLAN.md        # AC, kế hoạch theo task, checks và approval
     ├── CHECKS.md      # Kết quả thực, findings và bàn giao
+    ├── RETRO.md       # Đề xuất sau ticket (chỉ có khi chạy task-retro)
     ├── request/       # Nguồn yêu cầu theo revision: r1/, r2/ (CR)…
     └── .workflow/     # State, manifest, lịch sử và evidence máy quản lý
 ```
@@ -104,6 +105,8 @@ Gọi skill: Codex dùng `$task-sync`, Claude Code dùng `/task-sync` (tương t
 **Developer nhận ticket** — pull repo hồ sơ → `$task-finalize <ticket>` → plan được duyệt (developer hoặc leader, ghi đúng tên người duyệt) → `$task-implement <ticket>` → `$task-review <ticket>` → `$task-handoff <ticket>`.
 
 Handoff dừng ở trạng thái đã chuẩn bị: developer tự chạy lệnh push được in ra, tự tạo MR, rồi cho agent chạy `T handoff <ticket> [mr-url]` để helper xác minh branch trên remote đúng code đã review. Leader review và merge MR.
+
+**Nhìn lại (tùy chọn)** — `$task-retro <ticket>` sau khi review hoặc bàn giao: agent ghi `RETRO.md` trong thư mục ticket với các đề xuất cải thiện môi trường của agent (check tự động, chuẩn code, chỉ đường trong `AGENTS.md`). Trạng thái ticket không đổi; áp dụng đề xuất nào là việc người quyết.
 
 Skills nằm trong `.agents/skills`; runtime hooks trong `.codex/hooks.json` (Codex) và `.claude/settings.json` (Claude Code); Git hooks trong `.githooks`. Hai runtime dùng chung một policy (`.agents/workflow/lib/policy.mjs`).
 

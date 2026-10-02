@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Căn cứ | [TASK-SKILLS-BLUEPRINT.md](TASK-SKILLS-BLUEPRINT.md) bản 1.11, mục 13.4 (các việc 0, A–E) và R9, R17, R20, R21 |
-| Trạng thái | **G0–G3 đã làm** (2026-10-02). G4–G6 chưa bắt đầu; mỗi gói chỉ làm khi người dùng yêu cầu. |
+| Căn cứ | [TASK-SKILLS-BLUEPRINT.md](TASK-SKILLS-BLUEPRINT.md) bản 1.12, mục 13.4 (các việc 0, A–E) và R9, R17, R20, R21 |
+| Trạng thái | **G0–G4 đã làm** (2026-10-02). G5, G6 chưa bắt đầu; mỗi gói chỉ làm khi người dùng yêu cầu. |
 | Người đọc | Người hoặc agent sẽ thực hiện việc cập nhật |
 
 Kế hoạch này biến các quyết định đã chốt trong blueprint thành các gói việc làm được. Nó không thêm quyết định mới: chỗ nào kế hoạch và blueprint khác nhau thì blueprint đúng, và phải sửa kế hoạch.
@@ -144,7 +144,7 @@ Glossary và ADR là Markdown thường do agent sửa trực tiếp; helper kh�
 
 **Thay đổi hành vi cần biết:** dự án đặt hồ sơ trực tiếp trong `docs/tickets` của repo source phải ignore thêm `docs/GLOSSARY.md` và `docs/adr/`; nếu không, mọi lệnh dừng ở bước nạp cấu hình.
 
-### G4. Skill `task-retro`
+### G4. Skill `task-retro` — ĐÃ LÀM
 
 **Mục tiêu:** sau một ticket, có đề xuất cải thiện môi trường của agent, ghi thành `RETRO.md`. Không đổi state.
 
@@ -157,6 +157,8 @@ Glossary và ADR là Markdown thường do agent sửa trực tiếp; helper kh�
 `setup` tự liên kết skill mới vào `.claude/skills/` vì nó liên kết mọi thư mục có `SKILL.md`; mẫu ignore `.claude/skills/task-*` đã bao gồm tên mới.
 
 **Nghiệm thu:** test liên kết pass với 7 skill; chạy `task-retro` trên một ticket thử tạo `RETRO.md`, và `status` của ticket trước và sau giống nhau.
+
+**Kết quả (2026-10-02):** skill và `agents/openai.yaml` đã có; `setup` liên kết 7 skill (test liên kết pass). Thêm so với bảng trên: một kiểm tra trong test CLI rằng `RETRO.md` ghi vào thư mục ticket không làm đổi `next` và status các stage, và được tính vào `docsRepo.uncommitted`; `AGENTS.md` và `README.md` nhắc tới skill mới. Chưa làm: chạy `task-retro` trên một ticket thử đã review, ở Claude Code và Codex.
 
 ### G5. Bảng câu hỏi gửi người ngoài
 

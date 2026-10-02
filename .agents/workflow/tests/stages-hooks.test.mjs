@@ -485,6 +485,7 @@ test('setup links the kit skills into .claude/skills without copying or overwrit
     'task-finalize',
     'task-handoff',
     'task-implement',
+    'task-retro',
     'task-review',
     'task-sync',
   ])
@@ -493,14 +494,14 @@ test('setup links the kit skills into .claude/skills without copying or overwrit
   await writeFile(path.join(links, 'task-review', 'SKILL.md'), 'project version')
   const first = (await setupHooks(settings.repoRoot)).claudeSkills
   assert.deepEqual(first.conflicts, ['task-review'])
-  assert.equal(first.linked.length, 5)
+  assert.equal(first.linked.length, 6)
   assert.equal(await readFile(path.join(links, 'task-review', 'SKILL.md'), 'utf8'), 'project version')
   // One copy: an edit in .agents/skills is what Claude Code reads through the link.
   await writeFile(path.join(source, 'task-sync', 'SKILL.md'), 'edited once')
   assert.equal(await readFile(path.join(links, 'task-sync', 'SKILL.md'), 'utf8'), 'edited once')
   const second = await linkSkills(settings.repoRoot)
   assert.deepEqual(second.linked, [])
-  assert.equal(second.present.length, 5)
+  assert.equal(second.present.length, 6)
   // A link left pointing at a folder that no longer exists is repaired.
   const moved = path.join(settings.root, 'elsewhere')
   await mkdir(moved)

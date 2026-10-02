@@ -61,7 +61,7 @@ test('CLI needs only node: setup, doctor, sync from chat, record and status', as
   assert.equal(setup.json.local, 'created')
   assert.equal(setup.json.hooks.git, 'enabled-local')
   assert.deepEqual(setup.json.hooks.runtimes, ['codex', 'claude'])
-  assert.equal(setup.json.hooks.claudeSkills.linked.length, 6)
+  assert.equal(setup.json.hooks.claudeSkills.linked.length, 7)
   assert.match(run('doctor').stderr, /docsRepo/)
   await writeFile(
     path.join(settings.repoRoot, '.agents/workflow.local.json'),
@@ -149,6 +149,15 @@ test('CLI needs only node: setup, doctor, sync from chat, record and status', as
   assert.equal(run('status', key).json.docsRepo.uncommitted, false)
   await writeFile(status.json.target.glossary, '# Thuật ngữ\n')
   assert.equal(run('status', key).json.docsRepo.uncommitted, true)
+  commitDocs()
+  // A retro note is written straight into the ticket folder: something to commit, and no
+  // change to where the ticket stands.
+  const before = run('status', key).json
+  await writeFile(path.join(before.target.documents, ticket, 'RETRO.md'), '# Retro\n')
+  const after = run('status', key).json
+  assert.equal(after.docsRepo.uncommitted, true)
+  assert.equal(after.next, before.next)
+  assert.deepEqual(after.stages, before.stages)
   commitDocs()
   await mkdir(status.json.target.adr)
   await writeFile(path.join(status.json.target.adr, '0001-search-index.md'), '# Chỉ mục tìm kiếm\n')

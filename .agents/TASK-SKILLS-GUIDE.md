@@ -110,6 +110,7 @@ sequenceDiagram
 | Implement | Code, chạy checks, commit | – | Theo dõi, cấp quyền/môi trường nếu plan nêu |
 | Review | Review code + evidence | – | Đọc findings, quyết định khi đổi scope |
 | Handoff | Prepare, ghi nhận | **Review MR, merge** | **Push, tạo MR** |
+| Retro (tùy chọn) | Rút đề xuất, ghi `RETRO.md` | Quyết định áp dụng đề xuất nào | Yêu cầu retro; quyết định áp dụng đề xuất nào |
 
 Helper không ép vai trò: nó chỉ ghi đúng tên người chạy lệnh vào từng bản ghi. Developer chịu trách nhiệm cuối cùng cho những gì mình duyệt và push; "agent đã làm" không phải lý do để bỏ qua việc đọc plan và diff.
 
@@ -219,6 +220,7 @@ Việc helper liên tục ghi hồ sơ **không** được làm bẩn worktree h
 ├── TASK.md        # Yêu cầu, hiện trạng, phương án, quyết định, bước tiếp theo
 ├── PLAN.md        # AC, phương án đã chọn, steps, checks, delivery, approval
 ├── CHECKS.md      # Tiến độ thực, kết quả check, findings, trạng thái bàn giao
+├── RETRO.md       # Đề xuất sau ticket; chỉ có khi chạy task-retro (mục 5.7)
 ├── request/
 │   ├── r1/        # Nguồn lúc tạo ticket: file gốc (giữ tên) và/hoặc chat.md
 │   └── r2/        # CR: nguồn bổ sung/thay thế
@@ -570,6 +572,28 @@ sequenceDiagram
 | **Nội dung MR** | Theo mẫu trong skill: **Tóm tắt** (hình nhỏ nhất làm rõ thay đổi: pseudocode, cây gọi hàm, cây file, sơ đồ, diff phác thảo); **Bằng chứng** trước/sau lấy từ check đã chạy, ghi rõ local/mock/live; **Mức nguy hiểm khi merge** (đảo ngược dễ hay khó, phạm vi ảnh hưởng); **Vận hành và giới hạn**; `Refs <key>`. Không metrics RTK, không secret, không từ khóa tự đóng issue (`Fixes #…`). |
 | **Giới hạn** | URL MR do developer cung cấp; helper không đọc được nội dung MR trên hệ thống hosting. |
 
+### 5.7 `task-retro`: Nhìn lại (tùy chọn)
+
+Retro không phải stage thứ bảy. Nó chạy khi người dùng yêu cầu, sau khi ticket đã review hoặc đã bàn giao, và trả lời một câu hỏi: **ticket vừa rồi cho thấy môi trường của agent cần sửa gì** để ticket sau ít vòng sửa hơn.
+
+| | |
+|---|---|
+| **Người chạy** | Người vừa làm ticket, tốt nhất ngay trong phiên vừa làm, khi hội thoại còn đó. |
+| **Nguồn** | Hội thoại của phiên; CHECKS.md (findings, check fail, checkpoint, blocker); changelog của PLAN.md; log check fail. |
+| **Output** | `RETRO.md` trong thư mục ticket: bảng đề xuất xếp theo mức nghiêm trọng, mỗi đề xuất có sự việc, căn cứ và thay đổi cụ thể. Chạy lại thì thêm mục mới, giữ mục cũ. |
+| **Không làm** | Không đổi state, không tạo record, không tự sửa hook, check, chuẩn code, AGENTS.md hay skill. `status` trước và sau như nhau. |
+
+Mỗi sự việc được xếp vào đúng một loại:
+
+| Sự việc | Đề xuất |
+|---|---|
+| **Lỗi máy móc**: mẫu cú pháp cố định, API bị cấm, file đặt sai chỗ | Một check tự động hoặc Git hook. Check đã có trong `pom.xml` hay `frontend/package.json` mà chưa được nối vào luồng cũng là một phát hiện. |
+| **Lỗi phán đoán**: nhất quán giữa các file, hợp với code xung quanh | Một quy tắc trong chuẩn code của repo, nơi trục Chuẩn code của Review đọc. |
+| **Tìm thông tin chậm** | Một dòng chỉ đường trong AGENTS.md. |
+| **Chỉ dẫn không làm đổi hành vi** | Đề xuất xóa. |
+
+Áp dụng đề xuất nào là quyết định của người; mỗi đề xuất được chấp nhận thành một thay đổi riêng (thường là một ticket nhỏ hoặc một commit bảo trì bộ kit).
+
 ---
 
 ## 6. Các tình huống đặc biệt
@@ -766,6 +790,7 @@ Dùng cho buổi onboarding: người mới tự chạy một ticket thử từ 
 - [ ] Chạy `task-review`, đọc được findings (nếu có) và vòng sửa.
 - [ ] Chạy `task-handoff` đến `prepared`; tự push và tạo MR có `Refs <key>`; chạy `handoff` để ghi nhận.
 - [ ] Thử commit message sai (không theo Conventional Commits) để thấy hook chặn.
+- [ ] Chạy `task-retro`; đọc `RETRO.md` và kiểm `status` của ticket không đổi.
 
 **Tham chiếu**
 

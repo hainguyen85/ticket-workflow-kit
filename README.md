@@ -45,7 +45,7 @@ Hướng dẫn đầy đủ: [WORKFLOW_SETUP.md](WORKFLOW_SETUP.md).
 
 | Đường dẫn | Nội dung |
 |---|---|
-| [.agents/skills/](.agents/skills/) | 6 skill `task-sync`, `task-analyze`, `task-finalize`, `task-implement`, `task-review`, `task-handoff` |
+| [.agents/skills/](.agents/skills/) | 6 skill của luồng `task-sync`, `task-analyze`, `task-finalize`, `task-implement`, `task-review`, `task-handoff`, và `task-retro` để nhìn lại một ticket |
 | [.agents/workflow/](.agents/workflow/) | CLI `task.mjs`, thư viện helper, [CONTRACT.md](.agents/workflow/CONTRACT.md), tests |
 | [.agents/workflow.config.json](.agents/workflow.config.json) | Cấu hình dùng chung của dự án (remote, base branch, nhánh bảo vệ…) |
 | [.githooks/](.githooks/) | Git hooks (`pre-commit`, `commit-msg`, `pre-push`) |

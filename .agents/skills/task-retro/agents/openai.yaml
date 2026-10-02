@@ -1,0 +1,3 @@
+interface:
+  display_name: "Task retro"
+  short_description: "Nhìn lại ticket, đề xuất cải thiện môi trường của agent"
