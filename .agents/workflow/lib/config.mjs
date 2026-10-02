@@ -49,7 +49,7 @@ export function isWithin(parent, child) {
   )
 }
 
-// Ticket ID = <key>-<slug>. The key is an external tracker key or the creation time.
+// Ticket ID = <key>-<slug>. The key is an external tracker key or a generated one (nextKey).
 export function ticketKey(value) {
   if (
     typeof value !== 'string' ||
@@ -62,29 +62,31 @@ export function ticketKey(value) {
 export function ticketSlug(value) {
   if (
     typeof value !== 'string' ||
-    value.length > 60 ||
-    !/^[a-z0-9]+(?:-[a-z0-9]+){1,5}$/.test(value)
+    value.length > 30 ||
+    !/^[a-z0-9]+(?:-[a-z0-9]+){1,3}$/.test(value)
   )
-    fail('Slug gồm 2–6 từ ASCII chữ thường nối bằng dấu gạch, ví dụ note-search.')
+    fail('Slug gồm 2–4 từ ASCII chữ thường nối bằng dấu gạch, tối đa 30 ký tự, ví dụ note-search.')
   return value
 }
-export function generatedKey(date = new Date()) {
-  const pad = (value) => String(value).padStart(2, '0')
-  return (
-    pad(date.getFullYear() % 100) +
-    pad(date.getMonth() + 1) +
-    pad(date.getDate()) +
-    '-' +
-    pad(date.getHours()) +
-    pad(date.getMinutes())
-  )
+// A generated key is the type prefix plus the next number of that prefix: REQ-7, BUG-12. The
+// number is read from the ticket folders that exist, so there is no counter file to merge.
+// Timestamp keys of earlier versions (REQ-260930-1415) have six digits and are not counted.
+export function nextKey(prefix, names) {
+  const pattern = new RegExp(`^${prefix}-(\\d{1,5})-`)
+  let last = 0
+  for (const name of names) {
+    const match = pattern.exec(name)
+    if (match) last = Math.max(last, Number(match[1]))
+  }
+  if (last >= 99999) fail('Đã hết số thứ tự cho loại ticket này.')
+  return `${prefix}-${last + 1}`
 }
 export function ticketName(value) {
   if (typeof value !== 'string' || value.length > 110) fail('Ticket ID không hợp lệ.')
   return segment(value)
 }
 
-// Ticket types and the prefix each gives to a generated key (REQ-260930-1415). One type may be
+// Ticket types and the prefix each gives to a generated key (REQ-7). One type may be
 // the change-request type: a ticket of that type follows up on work that was already handed off.
 export function ticketTypes(value = {}) {
   const types = value.types ?? { req: 'REQ', cr: 'CR' }

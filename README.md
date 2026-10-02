@@ -37,7 +37,7 @@ node .agents/workflow/task.mjs doctor    # kiểm tra môi trường
 node .agents/workflow/task.mjs list      # xem ticket
 ```
 
-Sau đó bật runtime hooks (Codex: `/hooks`; Claude Code: trust thư mục project) và gọi skill: `$task-sync` (Codex) hoặc `/task-sync` (Claude Code), các bước sau kèm ticket ID, ví dụ `/task-analyze 260930-1415`. Dùng `node .agents/workflow/task.mjs status <ticket>` để biết bước tiếp theo.
+Sau đó bật runtime hooks (Codex: `/hooks`; Claude Code: trust thư mục project) và gọi skill: `$task-sync` (Codex) hoặc `/task-sync` (Claude Code), các bước sau kèm ticket ID, ví dụ `/task-analyze REQ-7`. Dùng `node .agents/workflow/task.mjs status <ticket>` để biết bước tiếp theo.
 
 Hướng dẫn đầy đủ: [WORKFLOW_SETUP.md](WORKFLOW_SETUP.md).
 

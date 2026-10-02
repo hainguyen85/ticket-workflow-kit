@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { Buffer } from 'node:buffer'
-import { mkdir, writeFile, readFile, rm, readdir } from 'node:fs/promises'
+import { mkdir, writeFile, readFile, rm, readdir, cp } from 'node:fs/promises'
 import path from 'node:path'
 import {
   setup,
@@ -11,7 +11,7 @@ import {
   ticketKey,
   ticketSlug,
   ticketTypes,
-  generatedKey,
+  nextKey,
 } from '../lib/config.mjs'
 import {
   createTicket,
@@ -23,6 +23,7 @@ import {
   currentItems,
   resolveTicket,
   listTickets,
+  duplicateKeys,
 } from '../lib/vault.mjs'
 import { chatSource, fileSource, readSources } from '../lib/source.mjs'
 import { workspace, trySymlink } from './helpers.mjs'
@@ -152,10 +153,36 @@ test('Node, key and slug validation reject unsupported runtime and traversal', (
   for (const key of ['../1', '', 'a b', 'KEY-', '-KEY', 'x'.repeat(41), undefined])
     assert.throws(() => ticketKey(key))
   for (const key of ['PRJ-123', '260930-1415', 'T_1.2']) ticketKey(key)
-  for (const slug of ['search', 'Note-Search', 'a-b-c-d-e-f-g', 'note_search', 'tìm-kiếm', ''])
-    assert.throws(() => ticketSlug(slug))
-  for (const slug of ['note-search', 'a-b-c-d-e-f', 'v2-api-paging']) ticketSlug(slug)
-  assert.equal(generatedKey(new Date(2026, 8, 30, 14, 5)), '260930-1405')
+  for (const slug of [
+    'search',
+    'Note-Search',
+    'a-b-c-d-e',
+    'note_search',
+    'tìm-kiếm',
+    '',
+    'international-configuration-set', // three words, but longer than 30 characters
+  ])
+    assert.throws(() => ticketSlug(slug), /2–4 từ/)
+  for (const slug of ['note-search', 'a-b-c-d', 'v2-api-paging', 'search-empty-keyword'])
+    ticketSlug(slug)
+})
+test('a generated key is the type prefix plus the next number of that prefix', () => {
+  assert.equal(nextKey('REQ', []), 'REQ-1')
+  const names = [
+    'REQ-1-note-search',
+    'REQ-12-note-export',
+    'BUG-40-wrong-total',
+    'REQX-99-other-prefix',
+    'GL-123-from-tracker',
+    // A timestamp key of an earlier version: six digits, not a sequence number.
+    'REQ-260930-1415-old-style',
+    'REQ-7',
+  ]
+  assert.equal(nextKey('REQ', names), 'REQ-13')
+  assert.equal(nextKey('BUG', names), 'BUG-41')
+  assert.equal(nextKey('CR', names), 'CR-1')
+  assert.equal(nextKey('REQ', ['REQ-99998-last-one']), 'REQ-99999')
+  assert.throws(() => nextKey('REQ', ['REQ-99999-no-more']), /hết số thứ tự/)
 })
 test('ticket types map to key prefixes and are validated when configured', async (t) => {
   assert.deepEqual(ticketTypes(), {
@@ -218,7 +245,7 @@ test('redacts known credentials and private key blocks', () => {
   assert.equal(redact(heading), heading)
 })
 
-test('ticket ID is the external key or the creation time, followed by the slug', async (t) => {
+test('ticket ID is the external key or the next number of its type, followed by the slug', async (t) => {
   const settings = await workspace(t)
   const external = await createTicket(settings, identity, first())
   assert.equal(external.ticket, 'T-1-search-articles')
@@ -227,23 +254,13 @@ test('ticket ID is the external key or the creation time, followed by the slug',
     createTicket(settings, { ...identity, slug: 'other-topic' }, first()),
     /key này/,
   )
-  const now = new Date(2026, 8, 30, 14, 15)
-  const generated = await createTicket(
-    settings,
-    { slug: 'note-search', title: 'Note search' },
-    first(),
-    now,
-  )
-  assert.equal(generated.ticket, 'REQ-260930-1415-note-search')
+  const generated = await createTicket(settings, { slug: 'note-search', title: 'Note search' }, first())
+  assert.equal(generated.ticket, 'REQ-1-note-search')
   assert.equal(generated.type, 'req')
-  const bumped = await createTicket(
-    settings,
-    { slug: 'note-export', title: 'Note export' },
-    first(),
-    now,
-  )
-  assert.equal(bumped.ticket, 'REQ-260930-1416-note-export')
-  // The prefix comes from the ticket type; each project lists its own types.
+  const second = await createTicket(settings, { slug: 'note-export', title: 'Note export' }, first())
+  assert.equal(second.ticket, 'REQ-2-note-export')
+  // The prefix comes from the ticket type and each prefix counts on its own; each project
+  // lists its own types.
   const custom = {
     ...settings,
     config: { ...settings.config, tickets: { types: { req: 'REQ', bug: 'BUG' } } },
@@ -252,33 +269,75 @@ test('ticket ID is the external key or the creation time, followed by the slug',
     custom,
     { slug: 'wrong-total', title: 'Wrong total', type: 'bug' },
     first(),
-    now,
   )
-  assert.equal(bug.ticket, 'BUG-260930-1415-wrong-total')
+  assert.equal(bug.ticket, 'BUG-1-wrong-total')
   assert.equal(bug.type, 'bug')
   await assert.rejects(
-    createTicket(settings, { slug: 'other-kind', title: 'x', type: 'bug' }, first(), now),
+    createTicket(settings, { slug: 'other-kind', title: 'x', type: 'bug' }, first()),
     /Loại ticket không hợp lệ/,
   )
+  // A ticket of an earlier version keeps its timestamp key and is not counted; a folder left
+  // without a state by an interrupted creation still holds its number.
+  await createTicket(
+    settings,
+    { key: 'REQ-260930-1415', slug: 'old-style', title: 'Old style' },
+    first(),
+  )
+  await mkdir(path.join(settings.docsRoot, 'REQ-9-interrupted-sync'))
+  const tenth = await createTicket(settings, { slug: 'note-tags', title: 'Note tags' }, first())
+  assert.equal(tenth.ticket, 'REQ-10-note-tags')
   // An external key is used as it is; the type is still recorded.
   assert.equal(external.type, 'req')
   assert.deepEqual(await listTickets(settings), [
-    'BUG-260930-1415-wrong-total',
-    'REQ-260930-1415-note-search',
-    'REQ-260930-1416-note-export',
+    'BUG-1-wrong-total',
+    'REQ-1-note-search',
+    'REQ-10-note-tags',
+    'REQ-2-note-export',
+    'REQ-260930-1415-old-style',
     'T-1-search-articles',
   ])
   assert.equal(await resolveTicket(settings, 'T-1'), 'T-1-search-articles')
-  assert.equal(await resolveTicket(settings, 'REQ-260930-1416'), 'REQ-260930-1416-note-export')
-  await assert.rejects(resolveTicket(settings, 'REQ-260930'), /nhiều hồ sơ/)
+  // REQ-1 does not match REQ-10: a key ends where the slug starts.
+  assert.equal(await resolveTicket(settings, 'REQ-1'), 'REQ-1-note-search')
+  assert.equal(await resolveTicket(settings, 'REQ-260930-1415'), 'REQ-260930-1415-old-style')
+  await assert.rejects(resolveTicket(settings, 'REQ'), /nhiều hồ sơ/)
   await assert.rejects(resolveTicket(settings, 'T-9'), /Không tìm thấy/)
+  assert.deepEqual(await duplicateKeys(settings), [])
   for (const invalid of [
     { slug: 'single', title: 'x' },
+    { slug: 'one-two-three-four-five', title: 'x' },
     { slug: 'note-search', title: '' },
     { slug: 'note-search', title: 'two\nlines' },
   ])
     await assert.rejects(createTicket(settings, invalid, first()))
   await assert.rejects(createTicket(settings, { slug: 'no-source', title: 'x' }, []), /nguồn/)
+})
+test('tickets created on two machines before a pull share a key, and that is reported', async (t) => {
+  const settings = await workspace(t)
+  const mine = await createTicket(settings, { slug: 'note-search', title: 'Note search' }, first())
+  // Another machine: its own checkout of the documents repo, not yet holding my ticket.
+  const otherRepo = path.join(settings.root, 'other-docs')
+  const other = { ...settings, docsRepo: otherRepo, docsRoot: path.join(otherRepo, 'docs', 'tickets') }
+  await mkdir(otherRepo)
+  const theirs = await createTicket(other, { slug: 'note-export', title: 'Note export' }, first())
+  assert.equal(mine.ticket, 'REQ-1-note-search')
+  assert.equal(theirs.ticket, 'REQ-1-note-export')
+  // Git merges the two folders without a conflict because the slugs differ.
+  await cp(
+    path.join(other.docsRoot, theirs.ticket),
+    path.join(settings.docsRoot, theirs.ticket),
+    { recursive: true },
+  )
+  assert.deepEqual(await duplicateKeys(settings), [
+    { key: 'REQ-1', tickets: ['REQ-1-note-export', 'REQ-1-note-search'] },
+  ])
+  await assert.rejects(resolveTicket(settings, 'REQ-1'), /nhiều hồ sơ/)
+  assert.equal(await resolveTicket(settings, 'REQ-1-note-search'), 'REQ-1-note-search')
+  // Both tickets keep working under their full ID, and the next number moves on.
+  const copied = await ticketDirectory(settings, theirs.ticket, false)
+  assert.equal((await readState(copied, { ticket: theirs.ticket })).key, 'REQ-1')
+  const next = await createTicket(settings, { slug: 'note-tags', title: 'Note tags' }, first())
+  assert.equal(next.ticket, 'REQ-2-note-tags')
 })
 
 test('file sources are copied byte for byte into request/ and chat is snapshotted', async (t) => {

@@ -92,7 +92,9 @@ Không có token nào cần cấu hình: helper không gọi API hosting. Fetch/
 
 Glossary và ADR được tạo khi có nội dung đầu tiên; định dạng ở `.agents/workflow/GLOSSARY-ADR.md`.
 
-Ticket ID là `<key>-<slug>`. Key tự sinh có dạng `<PREFIX>-YYMMDD-HHMM`, prefix theo loại ticket (`REQ` cho yêu cầu mới, `BUG` cho lỗi, `CR` cho thay đổi yêu cầu sau bàn giao); nguồn có mã từ hệ thống ngoài thì dùng mã đó (vd. `GL-123`). Slug 2–6 từ ASCII do agent đặt. Ví dụ: `REQ-260930-1415-note-search`. Các lệnh nhận ID đầy đủ hoặc chỉ key.
+Ticket ID là `<key>-<slug>`. Key tự sinh có dạng `<PREFIX>-<số thứ tự>`, prefix theo loại ticket (`REQ` cho yêu cầu mới, `BUG` cho lỗi, `CR` cho thay đổi yêu cầu sau bàn giao) và số đếm riêng theo từng loại; nguồn có mã từ hệ thống ngoài thì dùng mã đó (vd. `GL-123`). Slug 2–4 từ ASCII, tối đa 30 ký tự, do agent đặt. Ví dụ: `REQ-7-note-search`. Các lệnh nhận ID đầy đủ hoặc chỉ key (`REQ-7`).
+
+Số thứ tự lấy từ các ticket đang có trên máy, nên **pull repo hồ sơ trước khi tạo ticket mới**. Nếu hai ticket trùng key, `T list` và `T doctor` báo `duplicateKeys`.
 
 **Chia sẻ qua Git:** helper chỉ ghi file. Sau mỗi bước, commit phần hồ sơ của ticket trong repo hồ sơ và push; người nhận ticket pull trước khi làm. Mỗi ticket chỉ làm trên một máy tại một thời điểm.
 

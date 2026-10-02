@@ -18,7 +18,7 @@ import {
   ticketKey,
   ticketSlug,
   ticketTypes,
-  generatedKey,
+  nextKey,
 } from './config.mjs'
 import { hasSecret } from './policy.mjs'
 import { currentViews } from './views.mjs'
@@ -72,19 +72,44 @@ export async function ticketDirectory(settings, ticket, create = true) {
   return child(current, '.workflow', create, missing)
 }
 
-export async function listTickets(settings) {
+// Every folder under the tickets root, including one left without a state by an interrupted
+// creation: its number must not be handed out again.
+async function ticketFolders(settings) {
   if (!(await regular(settings.docsRoot, true))) return []
+  return (await readdir(settings.docsRoot, { withFileTypes: true }))
+    .filter((entry) => entry.isDirectory() && /^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(entry.name))
+    .map((entry) => entry.name)
+}
+export async function listTickets(settings) {
   const names = []
-  for (const entry of await readdir(settings.docsRoot, { withFileTypes: true })) {
-    if (!entry.isDirectory() || !/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(entry.name)) continue
+  for (const name of await ticketFolders(settings)) {
     try {
-      if (await regular(path.join(settings.docsRoot, entry.name, '.workflow', 'state.json')))
-        names.push(entry.name)
+      if (await regular(path.join(settings.docsRoot, name, '.workflow', 'state.json')))
+        names.push(name)
     } catch {
       continue // an invalid folder is reported when it is addressed directly
     }
   }
   return names.sort()
+}
+// Tickets that share a key. A generated number is only unique among the tickets present on the
+// machine that created it, so two people who sync before pulling can produce the same key.
+export async function duplicateKeys(settings) {
+  const byKey = new Map()
+  for (const ticket of await listTickets(settings)) {
+    let key
+    try {
+      key = JSON.parse(
+        await readFile(path.join(settings.docsRoot, ticket, '.workflow', 'state.json'), 'utf8'),
+      ).key
+    } catch {
+      continue // an unreadable state is reported when the ticket is addressed directly
+    }
+    if (typeof key === 'string') byKey.set(key, [...(byKey.get(key) ?? []), ticket])
+  }
+  return [...byKey]
+    .filter(([, tickets]) => tickets.length > 1)
+    .map(([key, tickets]) => ({ key, tickets }))
 }
 // Accept the full ticket ID, or its key when that identifies exactly one ticket.
 export async function resolveTicket(settings, reference) {
@@ -285,7 +310,6 @@ export async function createTicket(
   settings,
   { key, slug, title, type, relatesTo },
   sources,
-  now = new Date(),
 ) {
   ticketSlug(slug)
   title = ticketTitle(title)
@@ -306,20 +330,12 @@ export async function createTicket(
         `Ticket ${related} chưa bàn giao: thay đổi yêu cầu là một revision của chính ticket đó (sync ${related} …), không phải ticket mới.`,
       )
   }
-  const names = await listTickets(settings)
-  const taken = (candidate) => names.some((name) => name.startsWith(`${candidate}-`))
+  const folders = await ticketFolders(settings)
   if (key !== undefined && key !== null) {
     ticketKey(key)
-    if (taken(key)) fail('Đã có ticket dùng key này; sync thêm nguồn vào ticket đó nếu là CR.')
-  } else {
-    const time = new Date(now)
-    const generated = () => `${rules.types[type]}-${generatedKey(time)}`
-    key = generated()
-    while (taken(key)) {
-      time.setMinutes(time.getMinutes() + 1)
-      key = generated()
-    }
-  }
+    if (folders.some((name) => name.startsWith(`${key}-`)))
+      fail('Đã có ticket dùng key này; sync thêm nguồn vào ticket đó nếu là CR.')
+  } else key = nextKey(rules.types[type], folders)
   const ticket = ticketName(`${key}-${slug}`)
   const directory = await ticketDirectory(settings, ticket)
   return withLock(directory, () =>

@@ -26,14 +26,15 @@ Mọi skill task-* làm bốn việc dưới đây theo cùng một cách; mỗi
 
 ## Ticket ID
 
-`<key>-<slug>`, ví dụ `REQ-260930-1415-note-search`, `BUG-261001-1030-search-npe`, `CR-261002-0900-search-filter` hoặc `GL-123-note-search`.
+`<key>-<slug>`, ví dụ `REQ-7-note-search`, `BUG-12-search-npe`, `CR-3-search-filter` hoặc `GL-123-note-search`. Trong lệnh, commit và MR, ticket được gọi bằng key (`BUG-12`); slug chỉ để tên thư mục và branch dễ đọc.
 
 - **Loại ticket** (`--type`): khai trong `tickets.types` của `.agents/workflow.config.json`, mỗi loại một prefix. Config đi kèm bộ kit khai `req` → `REQ` (yêu cầu mới), `cr` → `CR` (thay đổi yêu cầu sau bàn giao) và `bug` → `BUG` (lỗi của chức năng đang có); config không khai `tickets` thì helper dùng `req` và `cr`. Không truyền `--type` thì dùng `tickets.defaultType`. Loại được ghi vào hồ sơ và hiển thị ở đầu ba view.
 - **Ticket loại `bug`** đi cùng luồng, cùng cổng và cùng cách kiểm chứng với mọi ticket: required checks do helper chạy. Loại này chỉ đổi cách làm bên trong bước: Sync tách triệu chứng, stack trace, điều kiện xảy ra và bước tái hiện; Analyze lần từ stack trace vào code và nêu giả thuyết kèm dự đoán kiểm được.
-- **key tự sinh**: `<PREFIX>-YYMMDD-HHMM` theo giờ local lúc tạo, prefix lấy từ loại ticket. Trùng phút thì helper lấy phút kế tiếp.
+- **key tự sinh**: `<PREFIX>-<n>`, prefix lấy từ loại ticket và `n` là số thứ tự riêng của loại đó: số lớn nhất đang có trong thư mục ticket cộng một, bắt đầu từ 1. Thời điểm tạo nằm trong hồ sơ, không nằm trong ID. Ticket tạo bằng bản trước, mang key dạng `<PREFIX>-YYMMDD-HHMM`, vẫn dùng được và không tham gia đếm.
+- **Pull trước khi tạo ticket.** Số thứ tự chỉ tính trên các ticket đang có trên máy, nên repo hồ sơ phải được pull trước khi tạo ticket mới. Hai ticket cùng loại tạo trên hai máy chưa pull sẽ trùng key; `list` và `doctor` báo `duplicateKeys` khi điều đó xảy ra, và key bị trùng phải được gọi bằng ticket ID đầy đủ. Ticket trùng chưa dùng thì tạo lại bằng `sync` mới rồi xóa thư mục của nó; helper không đổi tên ticket đã tạo.
 - **key ngoài** (`--key`): khi nguồn mang mã của hệ thống khác, ví dụ issue GitLab/Redmine (`GL-123`, `RM-456`) hay mã Jira. Chữ/số nối bằng `-` `_` `.`, tối đa 40 ký tự; được dùng nguyên vẹn, không thêm prefix của loại.
 - **Liên kết** (`--relates-to <ticket>`): ghi ticket mà ticket mới nối tiếp; hiển thị thành link ở đầu view.
-- **slug**: agent đặt, 2–6 từ ASCII chữ thường nối bằng `-`, mô tả nội dung chính.
+- **slug**: agent đặt, 2–4 từ ASCII chữ thường nối bằng `-`, tối đa 30 ký tự, mô tả nội dung chính.
 - Mọi lệnh nhận ticket ID đầy đủ hoặc chỉ key khi key xác định đúng một ticket.
 - Branch source: `feature/<key>-<slug>`.
 

@@ -48,7 +48,7 @@ Bốn điều quan trọng nhất:
 - **Hồ sơ ticket nằm ở repo Git riêng**, chia sẻ bằng commit/push. Mỗi ticket có `TASK.md`, `PLAN.md`, `CHECKS.md`, nguồn yêu cầu trong `request/` và lịch sử bất biến trong `.workflow/`. Không sửa tay.
 - **Chỉ cần Git và Node.** Không token, không gọi API hosting, không `package.json`. Lệnh duy nhất: `node .agents/workflow/task.mjs`.
 
-Cách gọi skill: Codex dùng `$task-sync`, Claude Code dùng `/task-sync`, kèm file hoặc mô tả yêu cầu; các bước sau kèm **ticket ID**, ví dụ `$task-analyze REQ-260930-1415` hoặc `/task-analyze REQ-260930-1415`. Agent cũng tự gọi được các skill này khi đi tiếp sang bước mà `status` chỉ ra, như ở bản workshop gốc. Ba điểm luôn dừng chờ người: chọn hướng xử lý, duyệt plan, và push/tạo MR.
+Cách gọi skill: Codex dùng `$task-sync`, Claude Code dùng `/task-sync`, kèm file hoặc mô tả yêu cầu; các bước sau kèm **ticket ID**, ví dụ `$task-analyze REQ-7` hoặc `/task-analyze REQ-7`. Agent cũng tự gọi được các skill này khi đi tiếp sang bước mà `status` chỉ ra, như ở bản workshop gốc. Ba điểm luôn dừng chờ người: chọn hướng xử lý, duyệt plan, và push/tạo MR.
 
 ---
 
@@ -195,7 +195,7 @@ Việc helper liên tục ghi hồ sơ **không** được làm bẩn worktree h
 ### 4.3 Ticket ID
 
 ```text
-<key>-<slug>        ví dụ: REQ-260930-1415-note-search   |   BUG-261001-1030-search-npe   |   CR-261002-0900-search-filter   |   GL-123-note-search
+<key>-<slug>        ví dụ: REQ-7-note-search   |   BUG-12-search-npe   |   CR-3-search-filter   |   GL-123-note-search
 ```
 
 - **Loại ticket** quyết định prefix của key tự sinh, để nhìn ID là biết ticket thuộc loại nào:
@@ -207,10 +207,11 @@ Việc helper liên tục ghi hồ sơ **không** được làm bẩn worktree h
   | `bug` | `BUG` | Lỗi của chức năng đang có, từ mô tả lỗi và stack trace/log |
   | (dự án tự thêm) | ví dụ `US` | Khai trong `tickets.types` của `.agents/workflow.config.json` |
 
-- **key tự sinh**: `<PREFIX>-YYMMDD-HHMM` (giờ local lúc tạo). Trùng phút thì lấy phút kế tiếp.
+- **key tự sinh**: `<PREFIX>-<số thứ tự>`, đếm riêng theo từng loại (`REQ-7`, `BUG-12`). Key ngắn và không mang nghĩa, như mã của các tracker; thời điểm tạo nằm trong hồ sơ. Hằng ngày ticket được gọi bằng key: trong lệnh, trong commit và trong MR (`Refs BUG-12`).
+- **Pull repo hồ sơ trước khi tạo ticket mới.** Số thứ tự lấy từ các ticket đang có trên máy. Hai người tạo ticket cùng loại khi chưa pull sẽ trùng số, và Git không báo xung đột vì hai thư mục khác slug. Khi đó `list` và `doctor` trả `duplicateKeys`; xem [mục 10](#10-lỗi-thường-gặp).
 - **key ngoài**: nếu nguồn mang mã của hệ thống khác (issue GitLab/Redmine, Jira…) thì truyền `--key`, ví dụ `GL-123`, `RM-456`; mã đó được dùng nguyên vẹn nên prefix của tracker đã tự phân biệt.
 - **Liên kết**: ticket nối tiếp một ticket khác ghi `--relates-to <ticket>`; link hiện ở đầu TASK/PLAN/CHECKS.
-- **slug**: agent tự đặt, 2–6 từ ASCII chữ thường nối bằng `-`, mô tả nội dung chính.
+- **slug**: agent tự đặt, 2–4 từ ASCII chữ thường nối bằng `-`, tối đa 30 ký tự, mô tả nội dung chính. Slug chỉ để tên thư mục và branch dễ đọc.
 - Mọi lệnh nhận ID đầy đủ hoặc chỉ key (khi key xác định đúng một ticket).
 
 ### 4.4 Hồ sơ ticket
@@ -656,7 +657,7 @@ Pull repo hồ sơ → `status <ticket>` → làm đúng bước được trả 
 ### 7.1 Branch (repo source)
 
 ```text
-feature/<key>-<slug>          ví dụ: feature/REQ-260930-1415-note-search
+feature/<key>-<slug>          ví dụ: feature/REQ-7-note-search
 ```
 
 Tạo bằng `start <ticket>` lúc bắt đầu implement, không tạo tay.
@@ -729,7 +730,9 @@ Các `<stage>` hợp lệ cho `record`: `intake`, `analysis`, `finalize`, `appro
 | Thông báo | Nguyên nhân | Cách xử lý |
 |---|---|---|
 | Không tìm thấy hồ sơ ticket | Sai ID, hoặc chưa pull repo hồ sơ | `T list`; pull repo hồ sơ |
-| Ticket key khớp nhiều hồ sơ | Key chưa đủ để xác định | Dùng ID đầy đủ `<key>-<slug>` |
+| Ticket key khớp nhiều hồ sơ | Tham chiếu chưa đủ để xác định, hoặc hai ticket trùng key | Dùng ID đầy đủ `<key>-<slug>` |
+| `list`/`doctor` trả `duplicateKeys` | Hai ticket cùng loại được tạo trên hai máy khi chưa pull repo hồ sơ | Gọi hai ticket đó bằng ID đầy đủ. Ticket trùng chưa dùng: tạo lại bằng `sync` mới rồi xóa thư mục của nó. Từ nay pull repo hồ sơ trước khi tạo ticket |
+| Slug gồm 2–4 từ ASCII… | Slug dài hơn 4 từ hoặc 30 ký tự, hoặc có ký tự ngoài chữ thường, số và `-` | Rút gọn slug; phần mô tả đầy đủ nằm ở `--title` |
 | Loại ticket không hợp lệ | `--type` không có trong `tickets.types` | Dùng một loại đã khai, hoặc thêm loại vào `.agents/workflow.config.json` |
 | Ticket đã bàn giao: thay đổi yêu cầu sau bàn giao là ticket mới | `sync <ticket>` kèm nguồn mới trên ticket đã bàn giao | Tạo ticket `--type cr --relates-to <ticket>`; hoặc `--reopen` nếu MR chưa merge |
 | Ticket … chưa bàn giao: thay đổi yêu cầu là một revision | Tạo ticket CR trỏ tới ticket đang làm | `sync <ticket> …` trên chính ticket đó |

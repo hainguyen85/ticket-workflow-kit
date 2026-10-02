@@ -19,10 +19,10 @@ Tài liệu ghi lại **vì sao** bộ kit khác với bản workshop gốc (g�
 
 ### 1. Ticket ID = `<key>-<slug>`
 
-- Key: mã từ hệ thống ngoài nếu nguồn có (vd. `GL-123`); nếu không là `<PREFIX>-YYMMDD-HHMM` theo giờ local lúc tạo, prefix theo loại ticket (`REQ` yêu cầu mới, `CR` thay đổi yêu cầu sau bàn giao; danh sách khai trong config). Trùng phút thì lấy phút kế tiếp.
+- Key: mã từ hệ thống ngoài nếu nguồn có (vd. `GL-123`); nếu không là `<PREFIX>-<số thứ tự>`, prefix theo loại ticket (`REQ` yêu cầu mới, `CR` thay đổi yêu cầu sau bàn giao; danh sách khai trong config) và số đếm riêng theo từng loại, lấy từ tên các thư mục ticket đang có. Bản đầu dùng thời điểm tạo `YYMMDD-HHMM` để khỏi cần bộ đếm; nó bị thay vì ID quá dài so với thông lệ của các tracker, còn ngày giờ thì hồ sơ đã có. Cái giá là số có thể trùng khi hai máy tạo ticket mà chưa pull repo hồ sơ: xử lý bằng quy ước pull trước khi tạo và báo cáo `duplicateKeys`.
 - Prefix giúp nhìn ID là biết loại ticket, và để sẵn chỗ cho ticket đến từ GitLab/Redmine về sau.
 - CR của ticket chưa bàn giao vẫn là revision của ticket đó; CR của ticket đã bàn giao là ticket `CR-…` mới, liên kết về ticket gốc.
-- Slug: agent đặt, 2–6 từ ASCII chữ thường.
+- Slug: agent đặt, 2–4 từ ASCII chữ thường, tối đa 30 ký tự.
 - Lý do chọn key theo thời gian thay vì số tuần tự: không cần bộ đếm dùng chung, sắp xếp được theo thời gian, và tự nói lên ticket được tạo khi nào.
 
 ### 2. Nguồn yêu cầu: `request/r<N>/` là bản lưu

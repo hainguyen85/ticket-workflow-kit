@@ -276,7 +276,7 @@ test('a change before handoff is a revision; after handoff it is a linked change
     { ...followUp, type: 'cr', relatesTo: 'T-1' },
     change(),
   )
-  assert.match(created.ticket, /^CR-\d{6}-\d{4}-search-descendants$/)
+  assert.equal(created.ticket, 'CR-1-search-descendants')
   assert.equal(created.type, 'cr')
   assert.equal(created.relatesTo, ticket)
   const { directory, state } = await context(settings, created.ticket)

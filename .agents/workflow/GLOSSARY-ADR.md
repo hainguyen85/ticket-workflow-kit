@@ -24,7 +24,7 @@ _Liên quan_: khác **Xóa**, là thao tác không khôi phục được.
 
 ## Chỗ mơ hồ đã giải quyết
 
-- "Tài khoản" từng được dùng cho cả **Người dùng** và **Tổ chức**. Từ REQ-260930-1415: "tài khoản" chỉ **Người dùng**.
+- "Tài khoản" từng được dùng cho cả **Người dùng** và **Tổ chức**. Từ REQ-7: "tài khoản" chỉ **Người dùng**.
 ```
 
 Quy tắc:

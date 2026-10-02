@@ -19,6 +19,7 @@ import {
   syncTicket,
   resolveTicket,
   listTickets,
+  duplicateKeys,
   ticketRoot,
 } from './lib/vault.mjs'
 import { readSources } from './lib/source.mjs'
@@ -116,6 +117,18 @@ function docsRepoStatus(settings, directory = null) {
   }
 }
 
+// Reported by list and doctor; nothing is renamed, because the ticket ID is part of hashed records.
+async function duplicateReport(settings) {
+  const duplicates = await duplicateKeys(settings)
+  return duplicates.length
+    ? {
+        duplicateKeys: duplicates,
+        duplicateKeysNote:
+          'Có ticket trùng key (tạo trên hai máy khi chưa pull repo hồ sơ). Gọi các ticket này bằng ticket ID đầy đủ; ticket trùng chưa dùng thì tạo lại bằng sync mới rồi xóa thư mục của nó.',
+      }
+    : {}
+}
+
 const ignored = (file) =>
   spawnSync('git', ['check-ignore', '-q', file], { cwd: repoRoot, stdio: 'ignore' }).status === 0
 
@@ -170,6 +183,7 @@ try {
         documents: await probe(settings),
         docsRepo: docsRepoStatus(settings),
         tickets: (await listTickets(settings)).length,
+        ...(await duplicateReport(settings)),
         hooks: hookStatus(repoRoot),
         ...(claudeSkills ? { claudeSkills } : {}),
         baseRef: tryGit(repoRoot, [
@@ -201,7 +215,7 @@ try {
           tickets.push({ ticket, error: error.message })
         }
       }
-      result = { target: publicTarget(settings), tickets }
+      result = { target: publicTarget(settings), tickets, ...(await duplicateReport(settings)) }
     } else if (command === 'sync') {
       const options = parseSync(args)
       const sources = await readSources(options)

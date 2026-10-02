@@ -88,7 +88,7 @@ test('CLI needs only node: setup, doctor, sync from chat, record and status', as
   const created = run('sync', '--title', 'Tìm kiếm ghi chú', '--slug', 'note-search', '--chat', chat)
   assert.equal(created.status, 0, created.stderr)
   const ticket = created.json.ticket
-  assert.match(ticket, /^REQ-\d{6}-\d{4}-note-search$/)
+  assert.equal(ticket, 'REQ-1-note-search')
   assert.equal(created.json.type, 'req')
   assert.equal(created.json.changed, true)
   assert.equal(created.json.docsMissing, true)
@@ -99,7 +99,11 @@ test('CLI needs only node: setup, doctor, sync from chat, record and status', as
     note: 'Commit và push repo hồ sơ để chia sẻ thay đổi với team.',
   })
   assert.equal(created.json.target.ticket, ticket)
-  const key = ticket.slice(0, 15)
+  const key = 'REQ-1'
+  assert.match(
+    run('sync', '--title', 'x', '--slug', 'one-two-three-four-five', '--chat', chat).stderr,
+    /^Task: Slug gồm 2–4 từ/,
+  )
   assert.equal(run('status', key).json.next, 'sync')
   assert.equal(run('sync', key).json.changed, false)
   assert.match(run('sync', key, '--title', 'Other').stderr, /không đổi title/)
@@ -169,6 +173,20 @@ test('CLI needs only node: setup, doctor, sync from chat, record and status', as
     assert.match(blocked.stderr, /^Task: Stage finalize/)
   }
   assert.equal(git(settings.repoRoot, ['branch', '--show-current']), 'main')
+
+  // A second ticket with the same key, as left by a merge of two machines that both created
+  // a ticket before pulling: list and doctor report it, and the key alone no longer resolves.
+  assert.equal(run('list').json.duplicateKeys, undefined)
+  assert.equal(run('doctor').json.duplicateKeys, undefined)
+  const tickets = path.join(settings.docsRepo, 'docs', 'tickets')
+  await cp(path.join(tickets, ticket), path.join(tickets, 'REQ-1-note-export'), { recursive: true })
+  const duplicates = [{ key: 'REQ-1', tickets: ['REQ-1-note-export', 'REQ-1-note-search'] }]
+  const listedAgain = run('list').json
+  assert.deepEqual(listedAgain.duplicateKeys, duplicates)
+  assert.match(listedAgain.duplicateKeysNote, /pull repo hồ sơ/)
+  assert.deepEqual(run('doctor').json.duplicateKeys, duplicates)
+  assert.match(run('status', key).stderr, /^Task: Ticket key khớp nhiều hồ sơ/)
+  assert.equal(run('status', ticket).json.next, 'analysis')
 })
 test('CLI carries a ticket from a file source through to a verified handoff', async (t) => {
   const { settings, run, tmp } = await installed(t)
@@ -282,7 +300,7 @@ test('CLI carries a ticket from a file source through to a verified handoff', as
     more,
   )
   assert.equal(followUp.status, 0, followUp.stderr)
-  assert.match(followUp.json.ticket, /^CR-\d{6}-\d{4}-search-archived$/)
+  assert.equal(followUp.json.ticket, 'CR-1-search-archived')
   assert.equal(followUp.json.type, 'cr')
   assert.equal(followUp.json.relatesTo, 'PRJ-7-note-search')
   const listed = run('list').json.tickets
