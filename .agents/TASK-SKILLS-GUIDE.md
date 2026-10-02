@@ -479,6 +479,8 @@ Người lập plan thường không phải người phân tích, nên **TASK.md
 
 Các bước sau của ticket bug giống mọi ticket: kiểm chứng là required checks do helper chạy. Plan thêm một test hồi quy cho đúng lỗi này khi dự án có điểm đặt test phù hợp. Khi implement, log gỡ lỗi tạm thời mang một tiền tố riêng (vd. `[DEBUG-<key>]`) để gỡ sạch trước khi commit; nguyên nhân đã xác định được ghi vào CHECKS.md và nội dung MR. Việc test tay và tái hiện lỗi trên môi trường thật do con người làm, ngoài luồng của helper.
 
+**Câu hỏi cần người ngoài team trả lời** (khách hàng, bộ phận khác; áp dụng ở cả Sync và Analyze). Agent hỏi leader hai điều: gửi cho ai và cần nhận lại gì. Sau đó nó soạn một bảng câu hỏi trong `.workflow-tmp/questions-<key>-r<revision>-<chủ đề>.md`: mục đích, bối cảnh một đoạn, câu quan trọng nhất đứng trước, mỗi câu một ý kèm chỗ trả lời và đáp án đề xuất. TASK.md ghi câu nào đang chờ ai. Leader tự gửi file đi; khi nhận lại, đưa file đã điền vào bằng `task-sync <ticket>` với file đó. Câu trả lời trở thành một nguồn của revision mới, nên các bước đã làm được kiểm lại theo đúng cơ chế CR. File gửi ra ngoài không chứa secret, log hay chi tiết nội bộ.
+
 **Bàn giao ticket:** leader commit + push repo hồ sơ, báo ticket ID cho developer.
 
 ### 5.3 `task-finalize`: Chốt PLAN

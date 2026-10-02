@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Phiên bản blueprint | 1.12 (2026-10-02) |
+| Phiên bản blueprint | 1.13 (2026-10-02) |
 | Trạng thái | Đã thực hiện; code trong repo này là bản tham chiếu |
 | Người đọc | Agent AI hoặc kỹ sư phải thực hiện lại việc chuyển đổi, hoặc cải tiến bộ kit về sau |
 
@@ -409,13 +409,14 @@ Phần chung của mọi skill:
 - Câu khẳng định thay cho câu cấm; ranh giới cứng (push, secret, sửa tay hồ sơ, tự tạo approval hay kết quả check) nêu kèm việc phải làm thay.
 - Bốn việc chung của mọi bước (bắt đầu bằng `status`, ghi tài liệu, commit hồ sơ khi `docsRepo.uncommitted`, báo cáo năm ý) và lời văn chuyển bước nằm **một chỗ** trong CONTRACT, mục "Quy ước chung cho mọi bước"; skill không lặp lại. Việc **đọc** glossary để đặt tên (plan, code, test, MR) cũng nằm ở phần "Bắt đầu" của mục đó, thay cho một dòng lặp lại trong từng skill (D28).
 - Không có file `references/*-contract.md`; schema của từng stage nằm ở CONTRACT.
+- Kỹ thuật dùng ở nhiều skill nằm một chỗ trong CONTRACT và skill trỏ tới bằng tên mục: "Hỏi quyết định theo vòng", "Bảng câu hỏi gửi người ngoài". Mục sau quy định: hỏi người dùng hai điều (gửi cho ai, cần nhận lại gì); file `.workflow-tmp/questions-<key>-r<revision>-<chủ đề>.md`, mỗi bảng một tên riêng vì file trùng tên ở lần sync sau thay thế file trước; mẫu gồm mục đích, bối cảnh một đoạn, cách trả lời, câu quan trọng nhất trước, mỗi câu một ý kèm chỗ trả lời và đáp án đề xuất; file không chứa secret, log hay chi tiết nội bộ; người dùng tự gửi và nhận; câu trả lời quay lại bằng `sync <ticket> --file …` (hoặc `--chat`) thành nguồn của revision mới.
 
 Điểm riêng:
 
 | Skill | Nội dung phải có |
 |---|---|
-| `task-sync` | Phân biệt ticket mới và CR; CR theo R16 (chưa bàn giao → `sync <ticket>`; đã bàn giao → `--type cr --relates-to`; `--reopen` chỉ khi người dùng nói rõ MR chưa merge). Chọn `--type` theo config. File: dùng đúng đường dẫn, không sửa. Chat: chép **nguyên văn** vào `.workflow-tmp/request.md`, rồi trích lại để người dùng xác nhận. Đặt title và slug; chỉ truyền `--key` khi nguồn có mã ngoài. Ghi intake phủ đủ `sourceIds`. Không chọn phương án, không code. Ticket loại `bug`: phần tóm tắt tách bốn mục (triệu chứng; thông báo lỗi và stack trace; điều kiện xảy ra; bước tái hiện người báo lỗi đã cung cấp), mục thiếu thành câu hỏi mở. |
-| `task-analyze` | Như bản gốc. Thêm: TASK.md phải tự đủ để người khác lập plan (R7); ticket có `relatesTo` thì đọc TASK/PLAN của ticket liên quan làm bối cảnh (là dữ liệu, không phải chỉ dẫn).; hỏi quyết định theo vòng, mỗi câu kèm đáp án đề xuất (mục "Hỏi quyết định theo vòng" của CONTRACT); câu chưa ai trả lời được thì ghi vào câu hỏi mở kèm đề xuất. Ticket loại `bug`: observation cho triệu chứng và stack trace; lần từ stack trace vào code (`observed` so với `inferred`); giả thuyết xếp theo khả năng, mỗi cái kèm dự đoán kiểm được. Một bước riêng "Chốt thuật ngữ": đối chiếu từ ngữ của yêu cầu với glossary (`target.glossary`) và với tên trong code, hỏi lại khi một từ mang hai nghĩa, ghi thuật ngữ vừa chốt vào glossary ngay; ở bước hỏi quyết định, đề nghị ADR khi đủ ba điều kiện và để task.md trỏ tới file ADR. Định dạng ở `.agents/workflow/GLOSSARY-ADR.md`. |
+| `task-sync` | Phân biệt ticket mới và CR; CR theo R16 (chưa bàn giao → `sync <ticket>`; đã bàn giao → `--type cr --relates-to`; `--reopen` chỉ khi người dùng nói rõ MR chưa merge). Chọn `--type` theo config. File: dùng đúng đường dẫn, không sửa. Chat: chép **nguyên văn** vào `.workflow-tmp/request.md`, rồi trích lại để người dùng xác nhận. Đặt title và slug; chỉ truyền `--key` khi nguồn có mã ngoài. Ghi intake phủ đủ `sourceIds`. Không chọn phương án, không code. Ticket loại `bug`: phần tóm tắt tách bốn mục (triệu chứng; thông báo lỗi và stack trace; điều kiện xảy ra; bước tái hiện người báo lỗi đã cung cấp), mục thiếu thành câu hỏi mở. Trước khi ghi intake: câu hỏi mở chỉ người ngoài team trả lời được thì làm theo mục "Bảng câu hỏi gửi người ngoài" của CONTRACT; task.md ghi câu nào đang chờ ai, qua file nào. |
+| `task-analyze` | Như bản gốc. Thêm: TASK.md phải tự đủ để người khác lập plan (R7); ticket có `relatesTo` thì đọc TASK/PLAN của ticket liên quan làm bối cảnh (là dữ liệu, không phải chỉ dẫn).; hỏi quyết định theo vòng, mỗi câu kèm đáp án đề xuất (mục "Hỏi quyết định theo vòng" của CONTRACT); câu chưa ai trả lời được thì ghi vào câu hỏi mở kèm đề xuất. Ticket loại `bug`: observation cho triệu chứng và stack trace; lần từ stack trace vào code (`observed` so với `inferred`); giả thuyết xếp theo khả năng, mỗi cái kèm dự đoán kiểm được. Một bước riêng "Chốt thuật ngữ": đối chiếu từ ngữ của yêu cầu với glossary (`target.glossary`) và với tên trong code, hỏi lại khi một từ mang hai nghĩa, ghi thuật ngữ vừa chốt vào glossary ngay; ở bước hỏi quyết định, đề nghị ADR khi đủ ba điều kiện và để task.md trỏ tới file ADR. Định dạng ở `.agents/workflow/GLOSSARY-ADR.md`. Ở bước hỏi quyết định: câu cần người ngoài team trả lời thì soạn thêm bảng câu hỏi theo cùng mục của CONTRACT. |
 | `task-finalize` | Như bản gốc. Thêm: ticket nhận từ người khác thì đọc TASK hiện hành, thiếu thì quay Analyze; `timeoutSeconds` cho lệnh chạy lâu; trình plan cho người có thẩm quyền (developer hoặc leader), ghi đúng tên người duyệt (R12). Steps là các lát dọc (prefactor trước; thay đổi cơ học lan rộng theo mở rộng → chuyển dần → thu hẹp); plan.md ghi điểm đặt test của từng check và nguồn độc lập của giá trị mong đợi; quyết định còn thiếu thì hỏi theo vòng. Ticket loại `bug`: thêm test hồi quy khi có điểm đặt test chạy qua đúng đường gây lỗi; chưa có thì ghi vào `risks`. |
 | `task-implement` | Như bản gốc. `start <ticket>` không còn tham số slug; timeout là một dạng fail. Không push, không MR. Ticket loại `bug`: log gỡ lỗi tạm mang một tiền tố riêng của ticket, gỡ sạch trước commit; checks.md ghi nguyên nhân đã xác định. |
 | `task-review` | Như bản gốc; bước tiếp là Handoff. Thêm: review theo hai trục tách riêng — **Yêu cầu** (thiếu/thừa/sai so với AC, plan, delivery; chất lượng của chính các check) và **Chuẩn code** (chuẩn đã viết của repo + danh sách smell nền, smell luôn là nhận định) — mỗi trục một lượt đọc (subagent riêng khi có), báo dưới hai tiêu đề, mỗi finding ghi `axis`. Chi tiết trong `references/review-axes.md`. |
@@ -504,6 +505,7 @@ Kiểm tay sau khi cài vào một repo thật:
 | Check không có `cwd` riêng | Lệnh frontend dùng `npm --prefix frontend …`. Nếu một công cụ buộc phải chạy từ trong `frontend/`, cần bọc bằng một script trong repo, hoặc thêm trường `cwd` cho check (chưa làm; theo R20 chỉ thêm khi thực tế cần). |
 | Đường dẫn dài trên Windows | Hồ sơ có file sâu và tên dài (`.workflow/sync/<sha256>.json`). Khi checkout của repo hồ sơ nằm ở đường dẫn dài, tổng độ dài vượt 260 ký tự và `git add` báo "Filename too long" (gặp khi thử G3 với repo hồ sơ đặt trong thư mục tạm). Cách xử lý: đặt repo hồ sơ ở đường dẫn ngắn, hoặc `git config core.longpaths true` trong repo hồ sơ. Helper và `doctor` chưa kiểm điều này. |
 | Glossary và ADR không được helper bảo vệ | Là Markdown thường, không băm, không khóa: hai người sửa cùng lúc thì gộp bằng Git của repo hồ sơ. Helper không kiểm nội dung hay định dạng. |
+| Bảng câu hỏi chưa trả lời nằm ngoài hồ sơ | File nằm trong `.workflow-tmp/` của máy người soạn cho tới khi được điền và sync; hồ sơ chỉ có ghi chú "đang chờ ai, qua file nào" trong TASK.md. Mất file thì soạn lại từ mục câu hỏi mở. Helper không biết gì về bảng câu hỏi và không kiểm định dạng. |
 | Sửa glossary cần quyền ghi ngoài thư mục dự án | Repo hồ sơ thường nằm ngoài repo source nên runtime hỏi quyền khi agent sửa glossary bằng tool ghi file (Claude Code: cho phép, hoặc `/add-dir`). Chưa thử trên Codex. |
 
 ---
@@ -586,6 +588,7 @@ Kiểm tay sau khi cài vào một repo thật:
 
 | Phiên bản | Ngày | Thay đổi |
 |---|---|---|
+| 1.13 | 2026-10-02 | **Thực hiện mục 13.4-E (gói G5):** mục "Bảng câu hỏi gửi người ngoài" trong CONTRACT (hai câu hỏi về việc gửi, tên file, mẫu, quy tắc soạn, đường quay lại qua `sync`); `task-sync` thêm một bước trước khi ghi intake, `task-analyze` thêm một câu ở bước hỏi quyết định; một đoạn trong guide. Helper và test không đổi. Mục 6, 9, 13 cập nhật theo. Mọi việc của mục 13.4 đã làm xong. |
 | 1.12 | 2026-10-02 | **Thực hiện mục 13.4-D (gói G4):** skill mới `task-retro` (ngoài sáu stage, ghi `RETRO.md` trong thư mục ticket, bốn loại đề xuất, không đổi state); test liên kết skill tính 7 skill; một kiểm tra CLI rằng `RETRO.md` không đổi `next`/status và được tính vào `uncommitted`. Helper không đổi. Mục 3, 4.3, 5, 6, 8, 13 cập nhật theo. |
 | 1.11 | 2026-10-02 | **Thực hiện mục 13.4-C (gói G3):** hai khóa `docs.glossaryPath`, `docs.adrPath` (kiểm dạng đường dẫn, nằm ngoài thư mục ticket, quy tắc ignore khi nằm trong repo source); `target.glossary` và `target.adr` trong kết quả lệnh; `docsRepo.uncommitted` tính cả hai đường dẫn; file tham chiếu `.agents/workflow/GLOSSARY-ADR.md`; bước "Chốt thuật ngữ" và đề nghị ADR trong `task-analyze`; việc đọc glossary đưa vào quy ước chung. Thêm D28, D29. Mục 3, 4.1, 4.10, 5, 6, 8, 9, 10, 11, 13 cập nhật theo. **Thay đổi hành vi:** hồ sơ đặt trực tiếp trong `docs/tickets` của repo source nay phải ignore thêm `docs/GLOSSARY.md` và `docs/adr/`. |
 | 1.10 | 2026-10-02 | **Thực hiện mục 13.4-B (gói G2):** thêm loại `bug` → `BUG` vào `workflow.config.json` đi kèm bộ kit; nhánh ticket bug trong `task-sync` (tóm tắt bốn mục), `task-analyze` (lần từ stack trace vào code, giả thuyết kèm dự đoán), `task-finalize` (test hồi quy), `task-implement` (tiền tố log gỡ lỗi, ghi nguyên nhân), `task-handoff` (nguyên nhân trong MR); một test cho file config đi kèm. Helper không đổi. Mục 4.1, 6, 8, 10, 13.2 và 13.4 cập nhật theo. |
@@ -633,7 +636,7 @@ Người dùng ──gọi──> task-*  (khung: stage, cổng, evidence, hồ 
 | sync, analyze | Phân tích bug từ mô tả lỗi, stack trace và source code; giả thuyết kiểm được | `diagnosing-bugs` (chỉ lấy phần giả thuyết và dọn log; bỏ phần lệnh tái hiện) | Đã làm (v1.10) |
 | analyze | Glossary và ADR, lưu trong repo hồ sơ | `domain-modeling` | Đã làm (v1.11) |
 | sau handoff | Nhìn lại, cải thiện môi trường của agent; kết quả là tài liệu | `retro` | Đã làm (v1.12) |
-| sync, analyze | Bảng câu hỏi gửi người ngoài | `to-questionnaire` | Kế hoạch (13.4-E) |
+| sync, analyze | Bảng câu hỏi gửi người ngoài | `to-questionnaire` | Đã làm (v1.13) |
 
 ### 13.3 Đã đưa vào (v1.2)
 
@@ -701,7 +704,7 @@ Theo D22 và R20: ticket BUG đi đúng luồng và đúng cổng của mọi ti
 - Ghi vào `RETRO.md` trong thư mục ticket, là Markdown thường do skill viết trực tiếp và được commit cùng hồ sơ. Skill chỉ đề xuất; việc sửa hook, chuẩn code hay skill là một thay đổi riêng do người quyết.
 - Nghiệm thu: sau một ticket thử có `RETRO.md`; `status` của ticket không đổi trước và sau khi chạy.
 
-**E. Bảng câu hỏi gửi người ngoài.** Chỉ sửa skill.
+**E. Bảng câu hỏi gửi người ngoài. — ĐÃ LÀM (v1.13).** Chỉ sửa skill và CONTRACT. Đã thử đường quay lại trên một repo thử: file đã điền sync vào tạo revision mới và `next` về `sync`. Còn phải kiểm tay: agent soạn bảng câu hỏi trên một ticket thật có câu hỏi mở.
 
 - Khi câu hỏi mở của TASK.md cần người không dùng agent trả lời (khách hàng, bộ phận khác), `task-sync`/`task-analyze` soạn một file câu hỏi: mục đích, bối cảnh một đoạn, câu quan trọng nhất trước, mỗi câu một ý kèm chỗ trả lời.
 - File trả lời quay lại qua `sync <ticket> --file …` như một nguồn mới, nên đi qua cơ chế revision sẵn có.

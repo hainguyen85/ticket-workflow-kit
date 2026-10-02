@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Căn cứ | [TASK-SKILLS-BLUEPRINT.md](TASK-SKILLS-BLUEPRINT.md) bản 1.12, mục 13.4 (các việc 0, A–E) và R9, R17, R20, R21 |
-| Trạng thái | **G0–G4 đã làm** (2026-10-02). G5, G6 chưa bắt đầu; mỗi gói chỉ làm khi người dùng yêu cầu. |
+| Căn cứ | [TASK-SKILLS-BLUEPRINT.md](TASK-SKILLS-BLUEPRINT.md) bản 1.13, mục 13.4 (các việc 0, A–E) và R9, R17, R20, R21 |
+| Trạng thái | **G0–G5 đã làm** (2026-10-02). G6 chưa bắt đầu; chỉ làm khi người dùng yêu cầu. |
 | Người đọc | Người hoặc agent sẽ thực hiện việc cập nhật |
 
 Kế hoạch này biến các quyết định đã chốt trong blueprint thành các gói việc làm được. Nó không thêm quyết định mới: chỗ nào kế hoạch và blueprint khác nhau thì blueprint đúng, và phải sửa kế hoạch.
@@ -160,7 +160,7 @@ Glossary và ADR là Markdown thường do agent sửa trực tiếp; helper kh�
 
 **Kết quả (2026-10-02):** skill và `agents/openai.yaml` đã có; `setup` liên kết 7 skill (test liên kết pass). Thêm so với bảng trên: một kiểm tra trong test CLI rằng `RETRO.md` ghi vào thư mục ticket không làm đổi `next` và status các stage, và được tính vào `docsRepo.uncommitted`; `AGENTS.md` và `README.md` nhắc tới skill mới. Chưa làm: chạy `task-retro` trên một ticket thử đã review, ở Claude Code và Codex.
 
-### G5. Bảng câu hỏi gửi người ngoài
+### G5. Bảng câu hỏi gửi người ngoài — ĐÃ LÀM
 
 **Mục tiêu:** câu hỏi mở cần người không dùng agent trả lời được gửi đi dưới dạng một file dễ trả lời.
 
@@ -171,6 +171,8 @@ Glossary và ADR là Markdown thường do agent sửa trực tiếp; helper kh�
 | guide | Một đoạn trong mục sync/analyze. |
 
 **Nghiệm thu:** trên một ticket thử có câu hỏi mở, agent tạo file câu hỏi; file trả lời sync vào tạo revision mới và intake phủ nguồn đó.
+
+**Kết quả (2026-10-02):** cách soạn nằm một chỗ, trong mục "Bảng câu hỏi gửi người ngoài" của CONTRACT; `task-sync` (bước 5 mới, trước khi ghi intake) và `task-analyze` (bước hỏi quyết định) trỏ tới. Tên file là `.workflow-tmp/questions-<key>-r<revision>-<chủ đề>.md`, mỗi bảng một tên riêng để lần sync sau không thay thế câu trả lời của lần trước. Đã thử trên một repo thử: sync file đã điền tạo revision 2, `item-added`, `next: sync`, `sourceIds` gồm cả nguồn mới. Chưa làm: để agent tự soạn bảng câu hỏi trên một ticket thật có câu hỏi mở.
 
 ### G6. Ví dụ theo stack và chốt tài liệu
 

@@ -149,6 +149,58 @@ Q2 - <tiêu đề>: …
 
 Người trả lời không có mặt (chờ khách hàng, chờ leader): ghi câu hỏi kèm đáp án đề xuất vào mục câu hỏi mở của TASK.md thay vì tự chọn.
 
+## Bảng câu hỏi gửi người ngoài
+
+Áp dụng ở Sync và Analyze khi câu hỏi mở cần một người **không dùng agent** trả lời: khách hàng, bộ phận khác, người vận hành. Người đó có hiểu biết mà team thiếu; bảng câu hỏi là một file họ điền được mà không cần biết gì về ticket.
+
+1. **Hỏi người dùng về việc gửi**, trong một lượt, hai điều họ luôn trả lời được: gửi cho ai (vai trò, họ biết gì mà team chưa biết) và cần nhận lại gì (những quyết định hay dữ kiện cụ thể). Người dùng không muốn gửi thì dừng ở đây; câu hỏi vẫn nằm trong mục câu hỏi mở của TASK.md.
+2. **Soạn file** `.workflow-tmp/questions-<key>-r<revision>-<chủ đề>.md` theo mẫu dưới đây. Mỗi bảng câu hỏi một tên riêng: file trùng tên ở lần sync sau sẽ thay thế file trước trong các nguồn hiện hành.
+3. **Ghi vào mục câu hỏi mở của task.md**, cạnh từng câu đã đưa vào bảng: đang chờ ai trả lời, qua file nào.
+4. **Đưa đường dẫn file cho người dùng.** Việc gửi đi và nhận lại do người dùng làm.
+5. **Câu trả lời quay lại như một nguồn mới**: file đã điền được đưa vào bằng `sync <ticket> --file <file đã điền>`; trả lời nhận qua chat hay email dạng văn bản thì người dùng dán vào và sync bằng `--chat`. Revision mới buộc intake tóm tắt câu trả lời theo source ID và các bước sau kiểm lại phần bị ảnh hưởng.
+
+Quy tắc soạn:
+
+- **Câu quan trọng nhất đứng trước.** Người nhận có thể chỉ trả lời một lượt.
+- **Mỗi câu một ý**, có chỗ trả lời ngay bên dưới. Câu ghép tách thành nhiều câu.
+- **Bối cảnh một đoạn**, đủ để một người chưa từng nghe về ticket trả lời đúng.
+- **Kèm đáp án đề xuất** khi team đã có hướng, để người nhận chỉ cần xác nhận hoặc sửa.
+- **"Vì sao cần biết"** một dòng, chỉ ở câu dễ bị hiểu sai hoặc dễ được trả lời qua loa.
+- Gom câu hỏi theo chủ đề khi có nhiều hơn vài câu.
+- File này đi ra ngoài team: chỉ chứa điều người nhận cần để trả lời. Secret, log, đường dẫn nội bộ và chi tiết cài đặt ở lại trong hồ sơ.
+
+```markdown
+# <Tiêu đề bảng câu hỏi>
+
+**Mục đích:** <vì sao có bảng câu hỏi này và quyết định nào đang chờ nó>
+
+**Từ:** <người gửi> · **Gửi:** <người nhận> · **Câu trả lời dùng để:** <việc sẽ làm với câu trả lời>
+
+## Bối cảnh
+
+<Một đoạn.>
+
+## Cách trả lời
+
+<Hạn trả lời và công sức ước tính.> Trả lời một phần hoặc "chưa biết" đều có ích: chỗ nào chưa chắc, xin ghi rõ là chưa chắc.
+
+## <Chủ đề>
+
+### 1. <Câu hỏi, một ý>
+
+_Vì sao cần biết: <một dòng>_
+
+_Đề xuất của chúng tôi: <đáp án> — <lý do một dòng>_
+
+> Trả lời:
+
+## Còn điều gì khác?
+
+Có điều gì chúng tôi chưa hỏi mà nên biết?
+
+> Trả lời:
+```
+
 ## Schema stage
 
 Mỗi input có `revision` hiện hành. `documents` là object với tên lowercase. Chỉ đọc schema cho stage đang làm.
