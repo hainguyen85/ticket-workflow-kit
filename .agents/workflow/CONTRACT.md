@@ -26,9 +26,10 @@ Mọi skill task-* làm bốn việc dưới đây theo cùng một cách; mỗi
 
 ## Ticket ID
 
-`<key>-<slug>`, ví dụ `REQ-260930-1415-note-search`, `CR-261002-0900-search-filter` hoặc `GL-123-note-search`.
+`<key>-<slug>`, ví dụ `REQ-260930-1415-note-search`, `BUG-261001-1030-search-npe`, `CR-261002-0900-search-filter` hoặc `GL-123-note-search`.
 
-- **Loại ticket** (`--type`): khai trong `tickets.types` của `.agents/workflow.config.json`, mỗi loại một prefix. Mặc định `req` → `REQ` (yêu cầu mới) và `cr` → `CR` (thay đổi yêu cầu sau bàn giao). Không truyền thì dùng `tickets.defaultType`. Loại được ghi vào hồ sơ và hiển thị ở đầu ba view.
+- **Loại ticket** (`--type`): khai trong `tickets.types` của `.agents/workflow.config.json`, mỗi loại một prefix. Config đi kèm bộ kit khai `req` → `REQ` (yêu cầu mới), `cr` → `CR` (thay đổi yêu cầu sau bàn giao) và `bug` → `BUG` (lỗi của chức năng đang có); config không khai `tickets` thì helper dùng `req` và `cr`. Không truyền `--type` thì dùng `tickets.defaultType`. Loại được ghi vào hồ sơ và hiển thị ở đầu ba view.
+- **Ticket loại `bug`** đi cùng luồng, cùng cổng và cùng cách kiểm chứng với mọi ticket: required checks do helper chạy. Loại này chỉ đổi cách làm bên trong bước: Sync tách triệu chứng, stack trace, điều kiện xảy ra và bước tái hiện; Analyze lần từ stack trace vào code và nêu giả thuyết kèm dự đoán kiểm được.
 - **key tự sinh**: `<PREFIX>-YYMMDD-HHMM` theo giờ local lúc tạo, prefix lấy từ loại ticket. Trùng phút thì helper lấy phút kế tiếp.
 - **key ngoài** (`--key`): khi nguồn mang mã của hệ thống khác, ví dụ issue GitLab/Redmine (`GL-123`, `RM-456`) hay mã Jira. Chữ/số nối bằng `-` `_` `.`, tối đa 40 ký tự; được dùng nguyên vẹn, không thêm prefix của loại.
 - **Liên kết** (`--relates-to <ticket>`): ghi ticket mà ticket mới nối tiếp; hiển thị thành link ở đầu view.

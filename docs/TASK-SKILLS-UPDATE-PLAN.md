@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Căn cứ | [TASK-SKILLS-BLUEPRINT.md](TASK-SKILLS-BLUEPRINT.md) bản 1.9, mục 13.4 (các việc 0, A–E) và R9, R17, R20, R21 |
-| Trạng thái | **G0, G1 đã làm** (2026-10-02). G2–G6 chưa bắt đầu; mỗi gói chỉ làm khi người dùng yêu cầu. |
+| Căn cứ | [TASK-SKILLS-BLUEPRINT.md](TASK-SKILLS-BLUEPRINT.md) bản 1.10, mục 13.4 (các việc 0, A–E) và R9, R17, R20, R21 |
+| Trạng thái | **G0, G1, G2 đã làm** (2026-10-02). G3–G6 chưa bắt đầu; mỗi gói chỉ làm khi người dùng yêu cầu. |
 | Người đọc | Người hoặc agent sẽ thực hiện việc cập nhật |
 
 Kế hoạch này biến các quyết định đã chốt trong blueprint thành các gói việc làm được. Nó không thêm quyết định mới: chỗ nào kế hoạch và blueprint khác nhau thì blueprint đúng, và phải sửa kế hoạch.
@@ -102,7 +102,7 @@ Khung mỗi skill:
 
 **Rủi ro:** làm mất một quy tắc khi rút gọn. Bảng đối chiếu là biện pháp chính; bản gốc để so nằm ở `baseline/workshop/.agents/skills/`.
 
-### G2. Loại ticket BUG
+### G2. Loại ticket BUG — ĐÃ LÀM
 
 **Mục tiêu:** tạo được ticket `BUG-…`; sync và analyze biết cách xử lý mô tả lỗi và stack trace. Không có cổng mới.
 
@@ -112,10 +112,13 @@ Khung mỗi skill:
 | `task-sync/SKILL.md` | Nhánh ticket bug: bản tóm tắt nêu riêng triệu chứng, thông báo lỗi và stack trace, điều kiện xảy ra, bước tái hiện nếu người báo đã cung cấp; thiếu thì thành câu hỏi mở. |
 | `task-analyze/SKILL.md` | Nhánh ticket bug: observation cho triệu chứng; lần từ stack trace vào code (`observed` so với `inferred`); giả thuyết kèm dự đoán kiểm được. |
 | `task-implement/SKILL.md` | Log gỡ lỗi tạm mang tiền tố riêng, gỡ sạch trước commit; nguyên nhân ghi vào CHECKS và MR. |
+| `task-finalize/SKILL.md`, `task-handoff/SKILL.md` | Theo blueprint 13.4-B: test hồi quy khi có điểm đặt test phù hợp; mục Tóm tắt của MR nêu nguyên nhân. |
 | CONTRACT, guide, WORKFLOW_SETUP | Thêm `bug` vào bảng loại ticket và ví dụ. |
 | `.agents/workflow/tests/foundation.test.mjs` | Một test đọc `workflow.config.json` đi kèm bộ kit và khẳng định nó hợp lệ, có `bug`. |
 
 **Nghiệm thu:** test mới pass; `sync --type bug …` tạo ticket `BUG-YYMMDD-HHMM-<slug>`; một ticket BUG thử có TASK.md thể hiện triệu chứng, đường lần từ stack trace và giả thuyết.
+
+**Kết quả (2026-10-02):** test mới pass. Trên một repo thử, `sync --type bug` tạo ticket `BUG-261002-1144-search-empty-keyword`, `type: bug`. Ngoài bảng trên, description của `task-sync` thêm điều kiện "có báo lỗi" để agent chọn đúng skill. Chưa làm: một ticket BUG thử đi qua analyze trên một dự án có code thật, để xem TASK.md thể hiện đường lần từ stack trace và giả thuyết.
 
 ### G3. Glossary và ADR trong repo hồ sơ
 

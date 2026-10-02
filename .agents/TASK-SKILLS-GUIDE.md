@@ -194,7 +194,7 @@ Việc helper liên tục ghi hồ sơ **không** được làm bẩn worktree h
 ### 4.3 Ticket ID
 
 ```text
-<key>-<slug>        ví dụ: REQ-260930-1415-note-search   |   CR-261002-0900-search-filter   |   GL-123-note-search
+<key>-<slug>        ví dụ: REQ-260930-1415-note-search   |   BUG-261001-1030-search-npe   |   CR-261002-0900-search-filter   |   GL-123-note-search
 ```
 
 - **Loại ticket** quyết định prefix của key tự sinh, để nhìn ID là biết ticket thuộc loại nào:
@@ -203,7 +203,8 @@ Việc helper liên tục ghi hồ sơ **không** được làm bẩn worktree h
   |---|---|---|
   | `req` (mặc định) | `REQ` | Yêu cầu mới, từ file hoặc mô tả trong chat |
   | `cr` | `CR` | Thay đổi yêu cầu của một ticket **đã bàn giao** |
-  | (dự án tự thêm) | ví dụ `BUG` | Khai trong `tickets.types` của `.agents/workflow.config.json` |
+  | `bug` | `BUG` | Lỗi của chức năng đang có, từ mô tả lỗi và stack trace/log |
+  | (dự án tự thêm) | ví dụ `US` | Khai trong `tickets.types` của `.agents/workflow.config.json` |
 
 - **key tự sinh**: `<PREFIX>-YYMMDD-HHMM` (giờ local lúc tạo). Trùng phút thì lấy phút kế tiếp.
 - **key ngoài**: nếu nguồn mang mã của hệ thống khác (issue GitLab/Redmine, Jira…) thì truyền `--key`, ví dụ `GL-123`, `RM-456`; mã đó được dùng nguyên vẹn nên prefix của tracker đã tự phân biệt.
@@ -425,6 +426,8 @@ Và kết thúc giống nhau, bằng một báo cáo gồm: **đã làm gì · p
 
 Với nguồn chat, agent chép **nguyên văn** phần yêu cầu vào `.workflow-tmp/request.md` rồi mới sync. Helper không đọc được khung chat, nên agent phải trích lại nội dung đã lưu để người dùng xác nhận.
 
+**Ticket báo lỗi** tạo bằng `sync --type bug …`; nguồn là mô tả lỗi và stack trace/log, lưu nguyên văn như mọi nguồn khác. Phần tóm tắt trong TASK.md tách bốn mục: triệu chứng, thông báo lỗi và stack trace, điều kiện xảy ra, các bước tái hiện mà người báo lỗi đã cung cấp. Mục nào nguồn chưa nêu thì thành câu hỏi mở.
+
 Sync lại cùng nội dung không tạo revision. Giới hạn: 20 file/lần, mỗi file dưới 20 MB, chat dưới 1 MB; nguồn text chứa mẫu secret bị từ chối.
 
 ### 5.2 `task-analyze`: Điều tra và đề xuất
@@ -440,6 +443,14 @@ Sync lại cùng nội dung không tạo revision. Giới hạn: 20 file/lần, 
 | **Cách hỏi** | Theo vòng: mỗi vòng gồm mọi câu hỏi quyết định đã đủ điều kiện hỏi, đánh số, mỗi câu kèm đáp án đề xuất để trả lời được bằng một từ. Câu chưa ai trả lời được ngay thì ghi vào mục câu hỏi mở của TASK.md kèm đáp án đề xuất. |
 
 Người lập plan thường không phải người phân tích, nên **TASK.md phải tự đủ**: developer đọc là lập được plan, không cần hỏi lại bối cảnh.
+
+**Với ticket loại `bug`**, căn cứ phân tích là mô tả lỗi, stack trace và source code:
+
+1. Ghi triệu chứng và stack trace thành observation, căn cứ là source ID trong `request/`.
+2. Lần từ stack trace vào code: các frame thuộc dự án, rồi đường đi của dữ liệu tới điểm lỗi. Đọc được trực tiếp từ code là `observed`; suy ra mà chưa được xác nhận là `inferred`.
+3. Nêu các giả thuyết về nguyên nhân, xếp theo khả năng, mỗi giả thuyết kèm một dự đoán kiểm được ("nếu nguyên nhân là X thì đổi Y sẽ làm lỗi biến mất"). Stack trace đã chỉ thẳng nguyên nhân thì một giả thuyết là đủ.
+
+Các bước sau của ticket bug giống mọi ticket: kiểm chứng là required checks do helper chạy. Plan thêm một test hồi quy cho đúng lỗi này khi dự án có điểm đặt test phù hợp. Khi implement, log gỡ lỗi tạm thời mang một tiền tố riêng (vd. `[DEBUG-<key>]`) để gỡ sạch trước khi commit; nguyên nhân đã xác định được ghi vào CHECKS.md và nội dung MR. Việc test tay và tái hiện lỗi trên môi trường thật do con người làm, ngoài luồng của helper.
 
 **Bàn giao ticket:** leader commit + push repo hồ sơ, báo ticket ID cho developer.
 

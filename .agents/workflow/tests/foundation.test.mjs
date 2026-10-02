@@ -162,6 +162,16 @@ test('ticket types map to key prefixes and are validated when configured', async
   await writeFile(file, JSON.stringify({ schemaVersion: 3, tickets: { types: { req: 'x' } } }))
   await assert.rejects(loadConfig(settings.repoRoot), /tickets\.types/)
 })
+test('the config shipped with the kit is valid and declares the bug ticket type', async () => {
+  const shipped = JSON.parse(
+    await readFile(new URL('../../workflow.config.json', import.meta.url), 'utf8'),
+  )
+  assert.equal(shipped.schemaVersion, 3)
+  const { types, defaultType, changeRequestType } = ticketTypes(shipped.tickets)
+  assert.deepEqual(types, { req: 'REQ', cr: 'CR', bug: 'BUG' })
+  assert.equal(defaultType, 'req')
+  assert.equal(changeRequestType, 'cr')
+})
 test('redacts known credentials and private key blocks', () => {
   const input = `${token} GH_TOKEN="${['other', 'secret'].join('-')}" api_key=abc password: xyz\n${'-----BEGIN ' + 'OPENSSH PRIVATE KEY-----'}\nprivate-data\n${'-----END ' + 'OPENSSH PRIVATE KEY-----'}`
   const safe = redact(input)

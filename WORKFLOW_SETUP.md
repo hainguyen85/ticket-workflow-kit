@@ -44,7 +44,7 @@ Chỉnh `.agents/workflow.config.json` cho dự án (commit, dùng chung cả te
 | `git.protectedBranches` | Nhánh không được push từ máy dev | `["main"]` |
 | `docs.ticketsPath` | Thư mục ticket bên trong repo hồ sơ | `docs/tickets` |
 | `checks.timeoutSeconds` | Timeout mặc định của một check | `600` |
-| `tickets.types` | Các loại ticket và prefix của key tự sinh | `{"req": "REQ", "cr": "CR"}` |
+| `tickets.types` | Các loại ticket và prefix của key tự sinh. File đi kèm bộ kit khai thêm `"bug": "BUG"` | `{"req": "REQ", "cr": "CR"}` |
 | `tickets.defaultType` | Loại dùng khi không truyền `--type` | `req` |
 | `tickets.changeRequestType` | Loại dành cho thay đổi yêu cầu sau bàn giao | `cr` |
 
@@ -80,7 +80,7 @@ Không có token nào cần cấu hình: helper không gọi API hosting. Fetch/
 └── .workflow/     # State, manifest, lịch sử và evidence máy quản lý
 ```
 
-Ticket ID là `<key>-<slug>`. Key tự sinh có dạng `<PREFIX>-YYMMDD-HHMM`, prefix theo loại ticket (`REQ` cho yêu cầu mới, `CR` cho thay đổi yêu cầu sau bàn giao); nguồn có mã từ hệ thống ngoài thì dùng mã đó (vd. `GL-123`). Slug 2–6 từ ASCII do agent đặt. Ví dụ: `REQ-260930-1415-note-search`. Các lệnh nhận ID đầy đủ hoặc chỉ key.
+Ticket ID là `<key>-<slug>`. Key tự sinh có dạng `<PREFIX>-YYMMDD-HHMM`, prefix theo loại ticket (`REQ` cho yêu cầu mới, `BUG` cho lỗi, `CR` cho thay đổi yêu cầu sau bàn giao); nguồn có mã từ hệ thống ngoài thì dùng mã đó (vd. `GL-123`). Slug 2–6 từ ASCII do agent đặt. Ví dụ: `REQ-260930-1415-note-search`. Các lệnh nhận ID đầy đủ hoặc chỉ key.
 
 **Chia sẻ qua Git:** helper chỉ ghi file. Sau mỗi bước, commit phần hồ sơ của ticket trong repo hồ sơ và push; người nhận ticket pull trước khi làm. Mỗi ticket chỉ làm trên một máy tại một thời điểm.
 

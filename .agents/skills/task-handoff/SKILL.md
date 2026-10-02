@@ -44,3 +44,4 @@ Refs <key>
 - **Đảo ngược**: *dễ* khi revert MR là đủ; *khó* khi có thao tác phá hủy hoặc khó hoàn tác (migration dữ liệu, đổi hợp đồng API đã có người dùng, xóa dữ liệu).
 - **Phạm vi ảnh hưởng**: nơi có thể bị tác động ngoài phạm vi ticket (người dùng API, dữ liệu hiện hữu, hiệu năng, cấu hình triển khai).
 - Bỏ mục "Vận hành và giới hạn" khi không có gì để ghi.
+- Ticket loại `bug`: mục Tóm tắt nêu nguyên nhân đã xác định (lấy từ CHECKS.md), để người gỡ lỗi sau đọc được; dòng "Trước" là triệu chứng của lỗi.

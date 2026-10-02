@@ -16,7 +16,8 @@
   "tickets": {
     "types": {
       "req": "REQ",
-      "cr": "CR"
+      "cr": "CR",
+      "bug": "BUG"
     },
     "defaultType": "req",
     "changeRequestType": "cr"
