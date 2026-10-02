@@ -97,6 +97,25 @@ Chạy ở root repo source bằng Node 22.12+ (nhánh 22 hoặc 24+). Không c�
 
 Skill soạn JSON; người dùng không cần nhớ schema. Input dưới 1 MB, không secrets, đặt trong `.workflow-tmp/` (đã gitignore). `status` trả `target` (ticket, thư mục hồ sơ, remote, base branch), `next`, `reason`, `docsMissing`/`sourceIds` và `docsRepo.uncommitted`.
 
+## Hỏi quyết định theo vòng
+
+Áp dụng mỗi khi một skill cần người quyết định: hướng xử lý, scope, câu hỏi mở của yêu cầu.
+
+- **Dữ kiện là việc của agent, quyết định là việc của người.** Điều gì tra được từ code, config, runtime hay hồ sơ thì tự tra. Câu hỏi đưa ra cho người là câu mà câu trả lời là một lựa chọn của họ.
+- **Hỏi theo vòng.** Một vòng gồm mọi câu hỏi đã đủ điều kiện hỏi, tức không phụ thuộc vào câu nào còn mở. Câu phụ thuộc vào câu trả lời của vòng này thuộc vòng sau.
+- **Mỗi câu kèm đáp án đề xuất** và lý do một dòng, để người trả lời chấp nhận được bằng một từ.
+- Đánh số câu hỏi, chờ trả lời, rồi tính vòng kế tiếp. Xong khi không còn câu hỏi nào và không còn điều gì được ngầm giả định.
+
+```text
+Q1 - <tiêu đề>: <câu hỏi, các lựa chọn nếu có>
+=> Đề xuất: <đáp án> — <lý do một dòng>
+
+Q2 - <tiêu đề>: …
+=> Đề xuất: …
+```
+
+Người trả lời không có mặt (chờ khách hàng, chờ leader): ghi câu hỏi kèm đáp án đề xuất vào mục câu hỏi mở của TASK.md thay vì tự chọn.
+
 ## Schema stage
 
 Mỗi input có `revision` hiện hành. `documents` là object với tên lowercase. Chỉ đọc schema cho stage đang làm.
@@ -108,7 +127,7 @@ Mỗi input có `revision` hiện hành. `documents` là object với tên lower
 - **observe:** `context: { ...facts được kiểm... }`, `evidence`. Ví dụ target/fixture/schema identity nếu task cần. Context đổi vô hiệu hóa evidence implement/review/handoff, giữ approval để agent đánh giá scope; không coi context change là quyền đổi thiết kế.
 - **checkpoint:** `documents: {"checks.md": "..."}`, tùy chọn `blocker`. Cho phép dirty; status `in-progress` hoặc `blocked`. Ghi phần đã làm, còn lại và hành động tiếp theo.
 - **implement:** `documents: {"checks.md": "..."}`. Helper đọc kết quả check thực đã chạy, không tin test pass do input tự khai. Commit local, clean tree, đủ evidence gồm nghiệm thu delivery thì status `verified`.
-- **review-findings:** `documents: {"checks.md": "..."}`, `findings: [{status:"open"|"resolved",description}]`. Ghi báo cáo cần sửa dù chưa pass; status `changes-requested`.
+- **review-findings:** `documents: {"checks.md": "..."}`, `findings: [{status:"open"|"resolved",description,axis}]` với `axis` là `"spec"` (trục Yêu cầu) hoặc `"standards"` (trục Chuẩn code). Ghi báo cáo cần sửa dù chưa pass; status `changes-requested`.
 - **review:** `documents: {"checks.md": "..."}`, `verdict: "pass"`, `findings: [...]` đều resolved. Đọc diff/code, không chỉ đọc summary; evidence phải còn hiệu lực. Status `reviewed`.
 - **prepare (mr.json):** `{revision, title, body}`. Body chứa ticket key (`Refs <key>`).
 

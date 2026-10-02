@@ -1,0 +1,5 @@
+interface:
+  display_name: "Task implement"
+  short_description: "Triển khai plan đã duyệt, chạy checks"
+policy:
+  allow_implicit_invocation: false

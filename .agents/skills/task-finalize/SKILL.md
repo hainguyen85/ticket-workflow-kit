@@ -1,15 +1,17 @@
 ---
 name: task-finalize
 description: Chốt PLAN.md từ yêu cầu, hiện trạng đã điều tra và phương án được chọn; chưa implement.
+argument-hint: "<ticket>"
+disable-model-invocation: true
 ---
 
 # Task finalize
 
 Dùng ticket ID (`<key>-<slug>`, hoặc chỉ key) từ yêu cầu hiện tại; xác nhận bằng `node .agents/workflow/task.mjs status <ticket>`. Không đoán repo/ticket hoặc đọc env. Chỉ đọc state/current views và context liên quan; tuân thủ [contract](../../workflow/CONTRACT.md) tại `.agents/workflow/CONTRACT.md`.
 
-1. Đọc analysis/source hiện hành và quyết định về hướng xử lý. Ticket nhận từ người khác: đọc TASK.md hiện hành; nếu analysis thiếu hoặc cần revalidate thì quay Analyze. Chốt behavior/AC, scope, assumptions và giới hạn.
-2. Tự lập steps theo dependencies của task, mỗi step có mục tiêu và checks. Task logic/tài liệu không mặc định cần DB/browser.
-3. Chốt requiredFacts và requiredChecks (ID/kind/AC/command argv, `timeoutSeconds` khi lệnh chạy lâu). Với hành vi cần runtime, xác định môi trường/fixture thật; build hoặc mock không đủ. Quyền chạy test/server/data operations và phục hồi phải rõ khi liên quan.
+1. Đọc analysis/source hiện hành và quyết định về hướng xử lý. Ticket nhận từ người khác: đọc TASK.md hiện hành; nếu analysis thiếu hoặc cần revalidate thì quay Analyze. Hướng xử lý hoặc scope chưa được quyết thì hỏi theo vòng, mỗi câu kèm đáp án đề xuất (mục "Hỏi quyết định theo vòng" trong contract). Chốt behavior/AC, scope, assumptions và giới hạn.
+2. Lập steps thành các **lát dọc**: mỗi step làm trọn một hành vi qua mọi tầng nó chạm tới và tự kiểm chứng được bằng checks của chính nó, thay cho việc chia theo tầng (hết DB rồi mới tới API). Việc dọn đường (prefactor) là step đứng trước. Thay đổi cơ học lan rộng (đổi tên, đổi kiểu dùng chung) đi theo trình tự mở rộng → chuyển dần từng cụm → thu hẹp, mỗi cụm một step vẫn xanh. Sắp steps theo dependencies. Task logic/tài liệu không mặc định cần DB/browser.
+3. Chốt requiredFacts và requiredChecks (ID/kind/AC/command argv, `timeoutSeconds` khi lệnh chạy lâu). Trong plan.md, ghi cho mỗi check **điểm đặt test**: interface công khai mà check quan sát hành vi qua đó, ưu tiên điểm sẵn có và cao nhất có thể; giá trị mong đợi lấy từ nguồn độc lập với code (yêu cầu, ví dụ đã biết đúng). Với hành vi cần runtime, xác định môi trường/fixture thật; build hoặc mock không đủ. Quyền chạy test/server/data operations và phục hồi phải rõ khi liên quan.
 4. Ghi plan.md cùng fields/files/risks/steps/checks. Unknown fact bắt buộc phải được khảo sát trước khi chốt; có thể quay Analyze.
 5. Trình plan cụ thể để người có thẩm quyền duyệt (developer hoặc leader). Ghi approve từ lời duyệt thật với đúng tên người duyệt, đúng hash/scope; không hỏi lại nếu đã được duyệt. CR giữ v1 và chỉ rõ delta cần quyết định.
 

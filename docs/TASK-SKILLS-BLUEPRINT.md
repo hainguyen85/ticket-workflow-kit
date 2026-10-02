@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Phiên bản blueprint | 1.1 (2026-10-01) |
+| Phiên bản blueprint | 1.7 (2026-10-02) |
 | Trạng thái | Đã thực hiện; code trong repo này là bản tham chiếu |
 | Người đọc | Agent AI hoặc kỹ sư phải thực hiện lại việc chuyển đổi, hoặc cải tiến bộ kit về sau |
 
@@ -11,7 +11,7 @@ Tài liệu này là **đặc tả đầy đủ** để đưa bộ skill task-* 
 Cách dùng:
 
 - **Làm lại từ đầu** (ví dụ khi bản gốc có phiên bản mới): đọc lần lượt mục 1 → 9, làm theo mục 7, nghiệm thu theo mục 8.
-- **Cải tiến về sau**: đọc mục 10 trước. Mọi thay đổi bắt đầu bằng việc sửa blueprint này (yêu cầu ở mục 1, đặc tả ở mục 4–6), sau đó mới sửa code, test và tài liệu.
+- **Cải tiến về sau**: đọc mục 10 trước. Mọi thay đổi bắt đầu bằng việc sửa blueprint này (yêu cầu ở mục 1, đặc tả ở mục 4–6), sau đó mới sửa code, test và tài liệu. Việc kết hợp với bộ skill kỹ thuật bên ngoài (đã làm gì, còn gì, không làm gì) nằm ở mục 13.
 
 Quy ước: **PHẢI** là bắt buộc; **NÊN** là mặc định, có thể đổi nếu ghi lý do vào mục 11. Các mã `R…`, `I…`, `D…` dùng để tham chiếu chéo.
 
@@ -33,7 +33,7 @@ Tài liệu liên quan: hợp đồng runtime [.agents/workflow/CONTRACT.md](../
 | R6 | Thư mục hồ sơ **được phép** nằm trong repo source nếu được repo source Git ignore. Không được cấm vị trí này. | Người dùng |
 | R7 | **Leader** sync/analyze và tạo ticket; **developer** nhận ticket rồi lập plan trở đi. Không có chuyện nhiều developer cùng tạo ticket. | Người dùng |
 | R8 | Feature branch tạo **lúc bắt đầu implement**, không phải lúc sync. | Người dùng |
-| R9 | Stack **Java trên Windows**. Repo source không có `package.json`. Lệnh gọi bằng `node`, không qua pnpm/npm. Máy dev có Node ≥ 22.12. | Người dùng |
+| R9 | Stack **Java Spring Boot** cho backend và **Vue.js** cho frontend, làm việc trên Windows, **cùng một repo**: project Maven của Spring Boot là project chính ở root; frontend nằm trong thư mục `frontend/`, dùng npm và Vitest. Root repo không có `package.json`; `frontend/package.json` chỉ phục vụ frontend. Helper gọi bằng `node`, không qua script npm/pnpm. Máy dev có Node ≥ 22.12. | Người dùng |
 | R10 | Giữ quy tắc metadata trung lập: commit/MR không có tên công cụ AI, không `Co-authored-by`. | Người dùng |
 | R11 | Dữ liệu trong hồ sơ (nguồn yêu cầu, log check) được **commit hết**. | Người dùng |
 | R12 | Người duyệt plan là **người duyệt thật**: developer hoặc leader. | Người dùng |
@@ -41,6 +41,11 @@ Tài liệu liên quan: hợp đồng runtime [.agents/workflow/CONTRACT.md](../
 | R14 | Tài liệu training nằm trong `.agents/` để đi cùng bộ kit. | Người dùng |
 | R15 | Key tự sinh mang **prefix theo loại ticket** để nhìn ID là phân biệt được: `REQ` cho yêu cầu mới, `CR` cho thay đổi yêu cầu, và mở rộng được; ticket từ GitLab/Redmine về sau dùng mã của tracker. Danh sách loại khai trong config của dự án. | Người dùng |
 | R16 | Thay đổi yêu cầu đi theo trạng thái ticket: chưa bàn giao thì là revision của ticket đó; đã bàn giao thì là ticket mới loại CR, có branch/MR riêng và liên kết về ticket gốc. | Người dùng |
+| R17 | Học kỹ thuật từ bộ `mattpocock/skills` và kết hợp theo kiểu phân lớp: task-* vẫn là khung và nơi ghi nhận duy nhất. Làm nhóm việc nhỏ (chỉ sửa nội dung skill) trước; phần còn lại theo phương án ở mục 13. | Người dùng |
+| R18 | Ghi nhận, **chưa kiểm chứng**: ở một số dự án của team, agent khó tự tái hiện lỗi và con người phải test tay; bug thường được phân tích từ mô tả lỗi, stack trace và source code. Theo R20, nhận xét này chưa dẫn tới thay đổi thiết kế nào. | Người dùng |
+| R19 | Glossary và ADR lưu trong repo hồ sơ. Kết quả nhìn lại sau ticket (retro) chỉ là tài liệu. | Người dùng |
+| R20 | **Bám sát baseline ở việc tự động các bước trong workflow và ở các trạng thái.** Luồng stage, status, cổng và cách agent đi qua các bước giữ như bản gốc; tạm coi dự án của team kiểm chứng tự động được như dự án workshop. Khác biệt đã xác nhận so với baseline: R1–R16 và **tech stack** (Java Spring Boot + Vue.js thay cho Next.js/Payload). Chỗ nào tắc khi dùng thật thì gỡ chỗ đó; không thêm stage, status hay cổng cho giả định chưa kiểm chứng. R20 **không** hạn chế việc tích hợp kỹ thuật vào từng bước (R17). | Người dùng |
+| R21 | Agent **gọi được các bước** task-*, như baseline; skill không bị khóa ở chế độ chỉ người dùng gọi. | Người dùng |
 
 ### 1.2 Bất biến phải giữ từ bản gốc
 
@@ -272,6 +277,7 @@ Evidence còn hiệu lực khi: đúng id/kind/target/command của plan, `resul
 - `node` → dùng chính `process.execPath`. Không bao giờ chạy qua shell.
 - Windows: tìm file thực thi trong thư mục repo rồi `PATH`, theo `PATHEXT`. Nếu ra `.cmd`/`.bat` thì gọi `cmd.exe /d /s /c "<dòng lệnh>"` với **từng** tham số trong dấu nháy kép và `windowsVerbatimArguments`. Tham số chứa `" % ! ^ & | < >`, xuống dòng, hoặc kết thúc bằng `\` thì từ chối.
 - Chạy bất đồng bộ, gom stdout+stderr (tối đa 64 MB). Hết timeout thì kill cả cây process (`taskkill /T /F` trên Windows, kill process group trên POSIX) và tính fail.
+- Mọi check chạy với thư mục làm việc là **root repo**. Lệnh của frontend trỏ vào thư mục con bằng tham số của chính công cụ, ví dụ `["npm","--prefix","frontend","run","test:unit","--","--run"]`. Check không có trường `cwd` riêng.
 - Timeout: `check.timeoutSeconds` → `checks.timeoutSeconds` → 600.
 
 ### 4.7 Handoff (thay cho release)
@@ -385,6 +391,8 @@ Git hooks giữ nguyên bản gốc, chỉ đổi đường dẫn script và ngu
 
 Phần chung của mọi skill:
 
+- Frontmatter: `name`, `description` một dòng, `argument-hint`. **Không** đặt `disable-model-invocation` (R21): agent gọi được skill như ở baseline. `agents/openai.yaml` cạnh `SKILL.md` chỉ mang `interface.display_name` và `interface.short_description` cho Codex, không có khối `policy`. (Bản 1.2 đã thêm cờ chỉ-người-gọi; việc gỡ nằm ở mục 13.4-0.)
+
 - Mở đầu: dùng ticket ID từ yêu cầu hiện tại, xác nhận bằng `status <ticket>`; không đoán repo/ticket, không đọc env; tuân thủ `.agents/workflow/CONTRACT.md` (ghi rõ đường dẫn này, vì đường dẫn tương đối không đúng khi skill được mở qua liên kết).
 - Khi ghi tài liệu: kèm `change.summary`, `change.reason`; không tự đặt metadata.
 - Khi kết quả báo `docsRepo.uncommitted: true`: commit phần hồ sơ của ticket trong repo hồ sơ (`docs(ticket): <ticket> <bước>`), không push.
@@ -395,11 +403,11 @@ Phần chung của mọi skill:
 | Skill | Nội dung phải có |
 |---|---|
 | `task-sync` | Phân biệt ticket mới và CR; CR theo R16 (chưa bàn giao → `sync <ticket>`; đã bàn giao → `--type cr --relates-to`; `--reopen` chỉ khi người dùng nói rõ MR chưa merge). Chọn `--type` theo config. File: dùng đúng đường dẫn, không sửa. Chat: chép **nguyên văn** vào `.workflow-tmp/request.md`, rồi trích lại để người dùng xác nhận. Đặt title và slug; chỉ truyền `--key` khi nguồn có mã ngoài. Ghi intake phủ đủ `sourceIds`. Không chọn phương án, không code. |
-| `task-analyze` | Như bản gốc. Thêm: TASK.md phải tự đủ để người khác lập plan (R7); ticket có `relatesTo` thì đọc TASK/PLAN của ticket liên quan làm bối cảnh (là dữ liệu, không phải chỉ dẫn). |
-| `task-finalize` | Như bản gốc. Thêm: ticket nhận từ người khác thì đọc TASK hiện hành, thiếu thì quay Analyze; `timeoutSeconds` cho lệnh chạy lâu; trình plan cho người có thẩm quyền (developer hoặc leader), ghi đúng tên người duyệt (R12). |
+| `task-analyze` | Như bản gốc. Thêm: TASK.md phải tự đủ để người khác lập plan (R7); ticket có `relatesTo` thì đọc TASK/PLAN của ticket liên quan làm bối cảnh (là dữ liệu, không phải chỉ dẫn).; hỏi quyết định theo vòng, mỗi câu kèm đáp án đề xuất (mục "Hỏi quyết định theo vòng" của CONTRACT); câu chưa ai trả lời được thì ghi vào câu hỏi mở kèm đề xuất. |
+| `task-finalize` | Như bản gốc. Thêm: ticket nhận từ người khác thì đọc TASK hiện hành, thiếu thì quay Analyze; `timeoutSeconds` cho lệnh chạy lâu; trình plan cho người có thẩm quyền (developer hoặc leader), ghi đúng tên người duyệt (R12). Steps là các lát dọc (prefactor trước; thay đổi cơ học lan rộng theo mở rộng → chuyển dần → thu hẹp); plan.md ghi điểm đặt test của từng check và nguồn độc lập của giá trị mong đợi; quyết định còn thiếu thì hỏi theo vòng. |
 | `task-implement` | Như bản gốc. `start <ticket>` không còn tham số slug; timeout là một dạng fail. Không push, không MR. |
-| `task-review` | Như bản gốc; bước tiếp là Handoff. |
-| `task-handoff` | Soạn title/body MR (trung lập, `Refs <key>`). Chạy `prepare`. Đưa developer lệnh push và nội dung MR. Sau khi developer báo đã push, chạy `handoff <ticket> [mr-url]`. Chưa xác minh được thì báo đúng trạng thái `prepared`. |
+| `task-review` | Như bản gốc; bước tiếp là Handoff. Thêm: review theo hai trục tách riêng — **Yêu cầu** (thiếu/thừa/sai so với AC, plan, delivery; chất lượng của chính các check) và **Chuẩn code** (chuẩn đã viết của repo + danh sách smell nền, smell luôn là nhận định) — mỗi trục một lượt đọc (subagent riêng khi có), báo dưới hai tiêu đề, mỗi finding ghi `axis`. Chi tiết trong `references/review-axes.md`. |
+| `task-handoff` | Soạn title/body MR (trung lập, `Refs <key>`). Chạy `prepare`. Đưa developer lệnh push và nội dung MR. Sau khi developer báo đã push, chạy `handoff <ticket> [mr-url]`. Chưa xác minh được thì báo đúng trạng thái `prepared`. Body MR theo mẫu trong skill: Tóm tắt (hình nhỏ nhất), Bằng chứng trước/sau từ check đã chạy, Mức nguy hiểm khi merge (đảo ngược, phạm vi ảnh hưởng), Vận hành và giới hạn, `Refs <key>`. |
 
 ---
 
@@ -479,6 +487,8 @@ Kiểm tay sau khi cài vào một repo thật:
 | Log check lưu UTF-8 | Output của công cụ dùng code page khác có thể hiển thị sai ký tự. |
 | Junction dùng đường dẫn tuyệt đối | Chuyển repo thì chạy lại `setup`. |
 | Hook phụ thuộc trust của runtime | `doctor` không chứng minh hook đang chạy trong session. |
+| Kiểm thủ công không được mô hình hóa | Như baseline, chỉ check là lệnh do helper chạy mới tính. Xác nhận của người test, nếu có, chỉ là text trong CHECKS/MR và không gắn với cổng nào. Phương án khi cần nằm ở mục 13.7. |
+| Check không có `cwd` riêng | Lệnh frontend dùng `npm --prefix frontend …`. Nếu một công cụ buộc phải chạy từ trong `frontend/`, cần bọc bằng một script trong repo, hoặc thêm trường `cwd` cho check (chưa làm; theo R20 chỉ thêm khi thực tế cần). |
 
 ---
 
@@ -540,6 +550,16 @@ Kiểm tay sau khi cài vào một repo thật:
 | D15 | Prefix của key tự sinh thể hiện **loại ticket**, khai trong config; key ngoài dùng nguyên vẹn | R15; mã của tracker đã tự mang prefix nên không cần thêm | Prefix theo kênh nguồn (FILE/CHAT/…); danh sách cố định trong code |
 | D16 | CR là revision khi ticket chưa bàn giao, là ticket CR mới khi đã bàn giao; helper cưỡng chế cả hai chiều, có `--reopen` làm ngoại lệ tường minh | R16; revision giữ được cơ chế buộc kiểm lại (I5), còn ticket đã bàn giao thì branch/MR đã chốt | CR luôn là ticket mới (mất việc buộc kiểm lại); CR luôn là revision (phải làm tiếp trên branch đã merge) |
 | D17 | Thêm `type`, `relatesTo` làm tăng schema của state lên 3, không có bước chuyển đổi | Chưa có hồ sơ nào ở schema 2 được dùng thật | Đọc cả schema 2 và coi thiếu `type` là mặc định |
+| D18 | Kết hợp với `mattpocock/skills` theo kiểu phân lớp: task-* là khung và nơi ghi nhận duy nhất; chỉ lấy lớp kỹ thuật | Hai bộ trả lời hai câu hỏi khác nhau (điều gì phải đúng để qua cổng / làm từng bước thế nào cho tốt) | Cài nguyên plugin chạy song song (hai luồng cạnh tranh, hai nguồn sự thật); bỏ qua hoàn toàn |
+| D19 | Viết lại kỹ thuật vào skill của mình thay vì phụ thuộc skill ngoài | Không thêm phụ thuộc cài đặt; nội dung bằng tiếng Việt, ví dụ theo Java; không bị nội dung chỉ dẫn tự cập nhật | Gọi skill ngoài theo tên (phải cài thêm, ví dụ thiên TypeScript); copy nguyên văn |
+| D20 | ~~Sáu skill task-* là skill chỉ người dùng gọi~~ — **thay bởi D25** | (lý do cũ: skill có tác dụng phụ nên agent không nên tự kích hoạt) | – |
+| D21 | Phần dùng chung của nhiều skill (cách hỏi theo vòng) đặt trong CONTRACT | Skill chỉ người dùng gọi không gọi được nhau; CONTRACT là tài liệu mọi skill đã trỏ tới | Lặp lại trong từng skill; tách thành một skill model tự gọi |
+| D22 | Ticket BUG không có cơ chế kiểm chứng riêng: không bắt buộc lệnh tái hiện lỗi, không có cổng hay bản ghi cho việc test tay. Kiểm chứng theo đúng quy tắc chung (required checks do helper chạy) | R20: bám sát baseline; R18 mới là nhận xét chưa kiểm chứng | Bắt buộc lệnh tái hiện (skill gốc `diagnosing-bugs`); mục "Kiểm bởi người" và bản ghi xác nhận của người test (hoãn, mục 13.7) |
+| D23 | Glossary và ADR lưu trong repo hồ sơ, là Markdown thường ngoài cơ chế record | R19; không đụng cổng `files` của plan, chia sẻ cùng cách với hồ sơ | Lưu trong repo source (mọi sửa đổi phải nằm trong `files` của plan, hoặc phải nới cổng) |
+| D24 | Kết quả retro là một file `RETRO.md` trong thư mục ticket, không phải stage | R19; không đổi state, không cần sửa helper | Thêm stage `retro` có record và cổng |
+| D25 | Agent gọi được sáu skill task-*; gỡ cờ chỉ-người-gọi đã thêm ở bản 1.2. Các điểm dừng chờ người giữ nguyên như baseline và do helper cưỡng chế: duyệt plan (cổng approval), push và tạo MR (helper không push) | R20, R21: workflow tự động như baseline | Giữ chỉ-người-gọi (D20) |
+| D26 | Hoãn mọi cơ chế cho kiểm thủ công (xác nhận của người test) cho tới khi dùng thật bị tắc | R20: chưa có bằng chứng dự án nào không tự động hóa được check | Thêm ngay hành động ghi xác nhận kiểu approval và một cổng |
+| D27 | Phạm vi của "bám sát baseline" là luồng bước và trạng thái; kỹ thuật từ bộ skill của Matt Pocock vẫn được tích hợp vào từng bước | R17 và R20 theo cách người dùng nêu: tự động như baseline, tối ưu từng bước bằng kỹ thuật bổ sung | Bỏ các mục A, C, D, E để giống baseline hoàn toàn |
 
 ---
 
@@ -547,5 +567,144 @@ Kiểm tay sau khi cài vào một repo thật:
 
 | Phiên bản | Ngày | Thay đổi |
 |---|---|---|
+| 1.7 | 2026-10-02 | R9 ghi rõ bố cục repo: project Maven Spring Boot ở root, frontend Vue.js trong `frontend/` dùng npm và Vitest. Mục 4.6 và mục 9 ghi rõ check chạy từ root repo, lệnh frontend dùng `npm --prefix frontend`. Chỉ sửa blueprint, chưa thực hiện. |
+| 1.6 | 2026-10-02 | R20 thu hẹp đúng phạm vi: bám sát baseline ở việc tự động các bước và ở trạng thái; thêm khác biệt tech stack (Spring Boot + Vue.js, R9); kỹ thuật từ bộ skill của Matt Pocock vẫn tích hợp (D27). Thêm liên kết tới kế hoạch thực hiện `TASK-SKILLS-UPDATE-PLAN.md`. Chỉ sửa blueprint, chưa thực hiện. |
+| 1.5 | 2026-10-02 | Thêm nguyên tắc bám sát baseline (R20) và agent gọi được các bước (R21, D25, mục 13.4-0; D20 bị thay). R18 hạ xuống thành nhận xét chưa kiểm chứng; mục 13.4-B bỏ phần "Kiểm bởi người"; cơ chế xác nhận của người test được hoãn (D26, mục 13.7). Chỉ sửa blueprint, chưa thực hiện. |
+| 1.4 | 2026-10-01 | Sửa R18, D22 và mục 13.4-B cho đúng thực tế của team: con người test và tái hiện lỗi; agent phân tích bug từ mô tả lỗi, stack trace và source code, rồi soạn yêu cầu kiểm cho người test. Bỏ cách diễn đạt "khả thi ở mọi dự án" của bản 1.3. Chỉ sửa blueprint, chưa thực hiện. |
+| 1.3 | 2026-10-01 | Chốt ba quyết định còn mở của mục 13.4 (R18–R19, D22–D24): ticket BUG không dùng lệnh tái hiện lỗi; glossary và ADR lưu trong repo hồ sơ; retro chỉ là tài liệu `RETRO.md`. Chỉ sửa blueprint, chưa thực hiện. |
+| 1.2 | 2026-10-01 | Thêm R17, D18–D21 và mục 13: kết hợp kỹ thuật từ `mattpocock/skills`. Đã đưa vào skill: chỉ người dùng gọi, hỏi theo vòng, lát dọc và điểm đặt test, review hai trục, mẫu body MR. Phần còn lại là kế hoạch ở mục 13.4. |
 | 1.1 | 2026-10-01 | Thêm R15–R16, D15–D17: loại ticket và prefix của key tự sinh (`tickets.*` trong config, `--type`), liên kết `--relates-to`, quy tắc CR theo trạng thái bàn giao và `--reopen`; state schema 3. |
 | 1.0 | 2026-10-01 | Bản đầu: đặc tả trạng thái sau khi chuyển đổi xong (nguồn file/chat, repo hồ sơ, handoff, runner Windows, hook hai runtime, liên kết skill). |
+
+---
+
+## 13. Kết hợp với bộ skill kỹ thuật `mattpocock/skills`
+
+### 13.1 Nguồn và bản chất
+
+- Repo `https://github.com/mattpocock/skills`, đọc ở commit `d81f3a1` (v1.3, 2026-09-29), giấy phép MIT. Ghi công trong [.agents/CREDITS.md](../.agents/CREDITS.md).
+- Bộ đó chủ trương skill nhỏ, ghép được, **không sở hữu quy trình**: không helper, không cổng, không state. Kết quả nằm trong issue tracker (GitHub, GitLab, hoặc file markdown trong `.scratch/`), `GLOSSARY.md` và ADR.
+- Luồng chính của nó: `grill-with-docs` → `to-spec` → `to-tickets` → `implement` (`tdd`, `code-review`) → `pr` → `retro`. Skill chia hai loại: chỉ người dùng gọi (điều phối) và model tự gọi (kỹ thuật dùng lại).
+
+### 13.2 Mô hình kết hợp
+
+```text
+Người dùng ──gọi──> task-*  (khung: stage, cổng, evidence, hồ sơ — nơi ghi nhận DUY NHẤT)
+                      │
+                      └─ dùng kỹ thuật ─> lớp kỹ thuật (cách hỏi, cắt việc, viết test, review, viết MR, gỡ bug, nhìn lại)
+```
+
+- task-* trả lời "điều gì phải đúng thì mới qua bước"; lớp kỹ thuật trả lời "làm bước đó thế nào cho tốt". Mọi kết quả của lớp kỹ thuật đi vào hồ sơ qua helper (TASK/PLAN/CHECKS), không tạo nơi lưu thứ hai.
+- Kỹ thuật được **viết lại vào skill của bộ kit** (D19), không gọi skill ngoài. Ánh xạ:
+
+| Stage | Kỹ thuật | Nguồn | Trạng thái |
+|---|---|---|---|
+| analyze, finalize | Hỏi quyết định theo vòng, kèm đáp án đề xuất | `grilling` | Đã làm (v1.2) |
+| finalize | Steps là lát dọc; mở rộng → chuyển dần → thu hẹp | `to-tickets` | Đã làm (v1.2) |
+| finalize, review | Điểm đặt test; các kiểu test kém | `tdd` | Đã làm (v1.2) |
+| review | Hai trục Yêu cầu / Chuẩn code; smell nền | `code-review` | Đã làm (v1.2) |
+| handoff | Mẫu body MR | `pr` | Đã làm (v1.2) |
+| mọi skill | Chỉ người dùng gọi | `writing-for-agents` | Đã làm ở v1.2, **sẽ gỡ** (13.4-0; D25) |
+| mọi skill | Viết lại theo nguyên tắc viết cho agent | `writing-for-agents` | Kế hoạch (13.4-A) |
+| sync, analyze | Phân tích bug từ mô tả lỗi, stack trace và source code; giả thuyết kiểm được | `diagnosing-bugs` (chỉ lấy phần giả thuyết và dọn log; bỏ phần lệnh tái hiện) | Kế hoạch (13.4-B) |
+| analyze | Glossary và ADR, lưu trong repo hồ sơ | `domain-modeling` | Kế hoạch (13.4-C) |
+| sau handoff | Nhìn lại, cải thiện môi trường của agent; kết quả là tài liệu | `retro` | Kế hoạch (13.4-D) |
+| sync, analyze | Bảng câu hỏi gửi người ngoài | `to-questionnaire` | Kế hoạch (13.4-E) |
+
+### 13.3 Đã đưa vào (v1.2)
+
+Chỉ sửa nội dung skill và tài liệu; helper và test không đổi.
+
+| Việc | Nơi sửa |
+|---|---|
+| Skill chỉ người dùng gọi (**sẽ gỡ**, 13.4-0) | Frontmatter 6 skill; `agents/openai.yaml` cạnh mỗi `SKILL.md` |
+| Hỏi theo vòng | Mục "Hỏi quyết định theo vòng" trong CONTRACT; `task-analyze`, `task-finalize` trỏ tới |
+| Lát dọc, điểm đặt test | `task-finalize` bước 2–3 |
+| Review hai trục | `task-review` bước 2; `task-review/references/review-axes.md`; trường `axis` trong findings (helper không kiểm trường này) |
+| Mẫu body MR | `task-handoff` (helper vẫn chỉ kiểm metadata trung lập, có ticket key, không từ khóa tự đóng issue) |
+
+### 13.4 Kế hoạch (chưa làm)
+
+Mỗi mục làm theo quy trình ở mục 10. Thứ tự: 0 → A → B → C → D → E; kế hoạch thực hiện chi tiết (gói việc, file phải sửa, nghiệm thu) nằm ở [TASK-SKILLS-UPDATE-PLAN.md](TASK-SKILLS-UPDATE-PLAN.md). R20 áp cho luồng bước và trạng thái: các mục dưới đây không thêm stage, status hay cổng mới; chúng chỉ đưa kỹ thuật vào bên trong từng bước (R17). Ví dụ trong skill và tài liệu viết theo stack của team: Spring Boot ở backend, Vue.js ở frontend.
+
+**0. Cho agent gọi được các bước (D25).** Chỉ sửa frontmatter và tài liệu; làm trước các mục khác.
+
+- Gỡ `disable-model-invocation: true` khỏi 6 `SKILL.md`; giữ `argument-hint`.
+- Trong 6 file `agents/openai.yaml`, bỏ khối `policy` (giữ `interface`).
+- Giữ nguyên lời văn chuyển bước của baseline trong skill: implement xong thì chuyển review; review xong thì chuyển handoff theo yêu cầu của người dùng; các bước còn lại báo bước tiếp theo.
+- Điểm dừng chờ người không đổi: chọn hướng xử lý, duyệt plan, và push/tạo MR. Hai điểm sau do helper cưỡng chế (cổng approval; helper không push), không phụ thuộc vào việc skill do ai gọi.
+- Sửa câu "chỉ chạy khi người dùng gọi" trong tài liệu training và dòng tương ứng trong `.agents/CREDITS.md`.
+- Nghiệm thu: trong Claude Code và Codex, sau khi `status` trả `next: review`, agent tự gọi được `task-review` mà người dùng không phải gõ tên skill.
+
+**A. Viết lại 6 skill theo nguyên tắc viết cho agent.** Chỉ sửa nội dung.
+
+- Mỗi bước kết thúc bằng một **điều kiện hoàn thành** kiểm được (ví dụ "mọi `sourceIds` có trong `translatedSourceIds`" thay cho "tóm tắt đủ").
+- Viết khẳng định thay cho cấm đoán; giữ câu cấm chỉ cho ranh giới cứng (push, secret, sửa tay hồ sơ) và kèm việc phải làm thay thế.
+- Mỗi ý một chỗ: ba đoạn cuối đang lặp ở cả 6 skill (cách ghi tài liệu, commit repo hồ sơ, cách báo cáo) và 6 file `references/*-contract.md` gần giống nhau chuyển về một chỗ trong CONTRACT.
+- Bỏ câu không làm đổi hành vi so với mặc định của model.
+- Nghiệm thu: chạy một ticket thử trên cả Codex và Claude Code trước và sau khi viết lại, so số lần agent bỏ sót bước.
+
+**B. Loại ticket BUG.** Sửa config và skill; **không sửa helper**.
+
+Theo D22 và R20: ticket BUG đi đúng luồng và đúng cổng của mọi ticket khác. Không có lệnh tái hiện bắt buộc, không có cơ chế riêng cho test tay.
+
+- Thêm `bug` → `BUG` vào `tickets.types` trong `workflow.config.json` đi kèm bộ kit. Mặc định trong code (khi config không khai `tickets`) giữ nguyên `req`, `cr`.
+- `task-sync` cho ticket loại bug: nguồn là mô tả lỗi và stack trace/log, lưu nguyên văn như mọi nguồn khác. Bản tóm tắt intake nêu riêng triệu chứng, thông báo lỗi và stack trace, điều kiện xảy ra, và các bước tái hiện nếu người báo lỗi đã cung cấp. Thiếu thông tin thì ghi vào câu hỏi mở.
+- `task-analyze` cho ticket loại bug:
+  1. Ghi đúng triệu chứng và stack trace thành observation, căn cứ là source ID trong `request/`.
+  2. Lần từ stack trace vào source code: các frame thuộc dự án, đường đi của dữ liệu tới điểm lỗi. Điều đọc được trực tiếp từ code là `observed`; điều suy ra mà chưa được xác nhận là `inferred`.
+  3. Nêu các giả thuyết về nguyên nhân, xếp theo khả năng, mỗi giả thuyết kèm một dự đoán kiểm được. Khi stack trace đã chỉ thẳng nguyên nhân thì một giả thuyết là đủ.
+- `task-finalize`, `task-implement`, `task-review`, `task-handoff`: như mọi ticket. Kiểm chứng là các required check do helper chạy; một test hồi quy cho đúng lỗi này được thêm khi dự án có điểm đặt test phù hợp. Log gỡ lỗi tạm thời mang một tiền tố riêng để gỡ sạch trước khi commit; nguyên nhân đã xác định được ghi vào CHECKS và nội dung MR.
+- Nghiệm thu: một ticket BUG thử đi hết luồng; TASK.md thể hiện triệu chứng, đường lần từ stack trace vào code và các giả thuyết.
+
+**C. Glossary và ADR.** Sửa skill; thêm cấu hình đường dẫn.
+
+Đã quyết (D23): lưu trong **repo hồ sơ**. Không đụng tới cổng `files` của plan, và được chia sẻ cùng cách với hồ sơ ticket.
+
+- Vị trí, tính từ `docsRepo`: `docs.glossaryPath` (mặc định `docs/GLOSSARY.md`) và `docs.adrPath` (mặc định `docs/adr`, mỗi quyết định một file `NNNN-<slug>.md`). Kết quả `status`/`doctor` trả hai đường dẫn này để skill không phải đoán. Nếu chúng nằm trong repo source thì phải được ignore, cùng quy tắc với thư mục hồ sơ ở mục 4.1.
+- Đây là tài liệu dùng chung cho mọi ticket, là Markdown thường: agent sửa trực tiếp, helper không băm và không đưa vào record. Chúng được commit cùng lúc với hồ sơ ticket trong repo hồ sơ.
+- Glossary chỉ chứa thuật ngữ nghiệp vụ: thuật ngữ, định nghĩa, các từ nên tránh, quan hệ giữa các thuật ngữ, và các chỗ mơ hồ đã được giải quyết. Không chứa chi tiết cài đặt hay quyết định kỹ thuật.
+- ADR chỉ viết khi cả ba điều đúng: quyết định khó đảo ngược, gây ngạc nhiên nếu thiếu bối cảnh, và là kết quả của một đánh đổi thật. TASK.md hoặc PLAN.md của ticket trỏ tới ADR thay vì chép lại.
+- `task-analyze` là nơi **chủ động** làm việc này: đối chiếu thuật ngữ trong yêu cầu với glossary, hỏi lại khi một từ đang mang hai nghĩa, cập nhật glossary ngay khi một thuật ngữ được chốt. Các skill khác chỉ **đọc** glossary để đặt tên trong plan, code, test và nội dung MR.
+- Nghiệm thu: sau một ticket thử, glossary có thuật ngữ mới của ticket đó và worktree của repo source vẫn sạch.
+
+**D. Bước nhìn lại (`task-retro`).** Skill mới; **không sửa helper**.
+
+Đã quyết (D24): kết quả **chỉ là tài liệu**, không phải stage và không có record.
+
+- Skill chỉ người dùng gọi, chạy sau khi review hoặc handoff, trong phiên vừa làm. Nó không đổi `state.json` và không ảnh hưởng tới bước tiếp theo mà `status` trả về.
+- Đề xuất cải thiện **môi trường của agent**, xếp theo mức nghiêm trọng: lỗi máy móc (mẫu cú pháp, API bị cấm, vị trí file) → một check tự động hoặc Git hook; lỗi phán đoán → một quy tắc trong chuẩn code mà trục Chuẩn code của review dùng; tìm thông tin chậm → một dòng chỉ đường trong AGENTS.md; chỉ dẫn không làm đổi hành vi → đề xuất xóa.
+- Ghi vào `RETRO.md` trong thư mục ticket, là Markdown thường do skill viết trực tiếp và được commit cùng hồ sơ. Skill chỉ đề xuất; việc sửa hook, chuẩn code hay skill là một thay đổi riêng do người quyết.
+- Nghiệm thu: sau một ticket thử có `RETRO.md`; `status` của ticket không đổi trước và sau khi chạy.
+
+**E. Bảng câu hỏi gửi người ngoài.** Chỉ sửa skill.
+
+- Khi câu hỏi mở của TASK.md cần người không dùng agent trả lời (khách hàng, bộ phận khác), `task-sync`/`task-analyze` soạn một file câu hỏi: mục đích, bối cảnh một đoạn, câu quan trọng nhất trước, mỗi câu một ý kèm chỗ trả lời.
+- File trả lời quay lại qua `sync <ticket> --file …` như một nguồn mới, nên đi qua cơ chế revision sẵn có.
+
+### 13.5 Không đưa vào
+
+| Thứ | Lý do |
+|---|---|
+| `implement-spec` (nhiều subagent, nhiều worktree, một integration branch) | Helper giả định một branch `feature/<ticket>` và một worktree cho mỗi ticket; fingerprint và lock không thiết kế cho nhiều worktree. |
+| `to-spec`, `to-tickets`, `triage`, `wayfinder` ở dạng nguyên bản | Ghi spec/ticket lên tracker hoặc `.scratch/`, tạo nguồn sự thật thứ hai bên cạnh PLAN.md; gọi `gh`/`glab`, trái R2. Ý tưởng của `to-tickets` đã vào `steps`. |
+| `implement` | Trùng vai với `task-implement` và tự commit không qua cổng. |
+| `handoff` (tài liệu chuyển phiên) | Trùng tên gây nhầm với `task-handoff`; việc chuyển người đã có TASK/PLAN/CHECKS và `status`. |
+| Cài nguyên plugin | Hai luồng cạnh tranh; nội dung chỉ dẫn tự cập nhật mà team không duyệt. |
+
+### 13.6 Quy tắc khi lấy thêm từ bộ skill ngoài
+
+- Lấy **ý tưởng và cấu trúc**, viết lại bằng tiếng Việt với ví dụ theo stack của team (Spring Boot, Vue.js); ghi nguồn và commit vào `.agents/CREDITS.md`.
+- Nếu về sau cần copy nguyên một skill: chỉ copy skill kỹ thuật (loại model tự gọi), cố định theo một commit, giữ thông báo giấy phép, và kiểm ba điều trước khi đưa vào: (1) nó không ghi ra nơi lưu thứ hai; (2) nó không gọi `gh`/`glab`/push; (3) tên không trùng skill có sẵn của runtime (ví dụ Claude Code có sẵn một skill tên `code-review`).
+- Mọi thứ lớp kỹ thuật sinh ra trong repo source trên feature branch phải nằm trong `files` của plan, nếu không `prepare` chặn.
+
+### 13.7 Hoãn lại, chờ thực tế sử dụng
+
+Theo R20, những ý dưới đây **không được làm** cho tới khi một dự án thật bị tắc vì thiếu chúng. Khi đó: ghi tình huống cụ thể vào mục 1, rồi mới đặc tả và làm.
+
+**Xác nhận của người test (kiểm thủ công).**
+
+- Dấu hiệu cần đến: một dự án thật có AC mà không check tự động nào chứng minh được, nên ticket đạt `verified`/`reviewed` chỉ nhờ build pass trong khi chưa ai test.
+- Baseline xử lý thế nào: không có khái niệm kiểm thủ công. Mọi check là lệnh do helper chạy; kết quả test tự khai trong input bị thay bằng kết quả helper tự chạy; việc con người nghiệm thu nằm ngoài workflow (leader xem MR).
+- Hướng làm khi cần, phỏng theo cách baseline ghi lời duyệt plan (`approve`): plan khai các check thủ công có ID; một hành động ghi xác nhận gồm người test, kết quả, nguyên văn lời xác nhận, lưu thành sự kiện bất biến; xác nhận gắn với nội dung code nên hết hiệu lực khi code đổi; một cổng chặn khi thiếu xác nhận.
+- Còn phải quyết khi đó: ai test và vào lúc nào (developer trước khi tạo MR, hay QA sau khi lên môi trường test), vì điều đó quyết định cổng đặt trước `verified`, trước `handoff`, hay thành một trạng thái sau `handed-off`.

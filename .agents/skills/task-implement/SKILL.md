@@ -1,6 +1,8 @@
 ---
 name: task-implement
 description: Triển khai plan ticket đã duyệt, tự kiểm tra/sửa lỗi trong scope, commit local và ghi CHECKS.md; dừng trước push.
+argument-hint: "<ticket>"
+disable-model-invocation: true
 ---
 
 # Task implement

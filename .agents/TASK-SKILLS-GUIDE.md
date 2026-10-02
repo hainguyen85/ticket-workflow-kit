@@ -48,7 +48,7 @@ Bốn điều quan trọng nhất:
 - **Hồ sơ ticket nằm ở repo Git riêng**, chia sẻ bằng commit/push. Mỗi ticket có `TASK.md`, `PLAN.md`, `CHECKS.md`, nguồn yêu cầu trong `request/` và lịch sử bất biến trong `.workflow/`. Không sửa tay.
 - **Chỉ cần Git và Node.** Không token, không gọi API hosting, không `package.json`. Lệnh duy nhất: `node .agents/workflow/task.mjs`.
 
-Cách gọi skill: Codex dùng `$task-sync`, Claude Code dùng `/task-sync`, kèm file hoặc mô tả yêu cầu; các bước sau kèm **ticket ID**, ví dụ `$task-analyze REQ-260930-1415` hoặc `/task-analyze REQ-260930-1415`.
+Cách gọi skill: Codex dùng `$task-sync`, Claude Code dùng `/task-sync`, kèm file hoặc mô tả yêu cầu; các bước sau kèm **ticket ID**, ví dụ `$task-analyze REQ-260930-1415` hoặc `/task-analyze REQ-260930-1415`. Sáu skill này chỉ chạy khi người dùng gọi; agent không tự kích hoạt chúng.
 
 ---
 
@@ -437,6 +437,7 @@ Sync lại cùng nội dung không tạo revision. Giới hạn: 20 file/lần, 
 | **Nội dung cần có** | Hiện trạng người dùng đang dùng; target bàn giao (runtime hay artifact); đường đi từ hiện trạng tới dùng được (chuẩn bị, dữ liệu, cấu hình, phụ thuộc); phân biệt môi trường test với môi trường bàn giao; security theo trust boundary thực của task. |
 | **Phương án** | Đủ đánh đổi để quyết định. Một hướng rõ ràng + lựa chọn thay thế ngắn là đủ. |
 | **Không làm** | Không sửa code. Không chạy thao tác phá hủy dữ liệu. Chỉ hỏi những **quyết định** còn thiếu; dữ kiện thu thập được thì tự điều tra. |
+| **Cách hỏi** | Theo vòng: mỗi vòng gồm mọi câu hỏi quyết định đã đủ điều kiện hỏi, đánh số, mỗi câu kèm đáp án đề xuất để trả lời được bằng một từ. Câu chưa ai trả lời được ngay thì ghi vào mục câu hỏi mở của TASK.md kèm đáp án đề xuất. |
 
 Người lập plan thường không phải người phân tích, nên **TASK.md phải tự đủ**: developer đọc là lập được plan, không cần hỏi lại bối cảnh.
 
@@ -466,6 +467,9 @@ Nếu analysis còn thiếu fact cần cho plan, quay lại Analyze (developer c
 
 Nguyên tắc chốt plan:
 
+- **Steps là các lát dọc.** Mỗi step làm trọn một hành vi qua mọi tầng nó chạm tới và tự kiểm chứng được bằng checks của chính nó; không chia theo tầng (hết DB rồi mới tới API). Việc dọn đường (prefactor) đứng trước. Thay đổi cơ học lan rộng đi theo trình tự mở rộng → chuyển dần từng cụm → thu hẹp.
+- **Mỗi check có điểm đặt test rõ ràng**: interface công khai mà check quan sát hành vi qua đó. Giá trị mong đợi lấy từ nguồn độc lập với code (yêu cầu, ví dụ đã biết đúng).
+
 - Chức năng chạy local → mặc định "xong" là **dùng được trên local đã thống nhất**, không mặc định deploy remote.
 - Test trên bản sao/fixture là lớp kiểm **bổ sung**, không thay nghiệm thu tại target.
 - Có smoke test tình huống người dùng trên **dữ liệu/trạng thái hiện hữu** khi liên quan.
@@ -494,7 +498,9 @@ Báo cáo cuối Implement phải nói **nơi sử dụng** và **kết quả sm
 |---|---|
 | **Mục tiêu** | Kiểm code **và** evidence trên đúng phiên bản (HEAD) đã implement. |
 | **Đọc gì** | Plan/AC, **diff và code liên quan**, evidence. Không chỉ đọc summary của người implement. |
-| **Kiểm gì** | Assertion có thật sự chứng minh AC không; `kind`/target của check đúng không; có dùng mock thay DB/API/browser khi AC cần lớp đó không; security, data lifecycle, tương thích. Plan có đủ cho kết quả người dùng cần không. Target bàn giao đã thật sự dùng được chưa. |
+| **Hai trục, báo riêng** | **Yêu cầu**: diff so với AC/plan/delivery — thiếu, thừa, sai. **Chuẩn code**: diff so với chuẩn đã viết của repo và danh sách smell nền. Mỗi trục một lượt đọc riêng (subagent riêng khi runtime hỗ trợ); không gộp, vì thay đổi có thể đạt trục này mà trượt trục kia. |
+| **Kiểm gì ở trục Yêu cầu** | Assertion có thật sự chứng minh AC không (không tự tính lại kết quả theo cách của code, không dính vào nội bộ); `kind`/target/điểm đặt test đúng không; có dùng mock thay DB/API/browser khi AC cần lớp đó không; security, data lifecycle, tương thích. Plan có đủ cho kết quả người dùng cần không. Target bàn giao đã thật sự dùng được chưa. |
+| **Kiểm gì ở trục Chuẩn code** | Vi phạm chuẩn đã viết là finding cứng. Smell (tên khó hiểu, code lặp, Feature Envy, tổng quát hóa thừa…) luôn là nhận định; chuẩn của repo thắng khi mâu thuẫn. Bỏ qua thứ công cụ đã tự kiểm. |
 | **Có findings** | `record review-findings` với findings `open` → status `changes-requested` → quay lại Implement. Sai scope → quay Finalize. |
 | **Pass** | Mọi findings `resolved`, evidence còn hiệu lực, implement đúng HEAD → `record review` với `verdict: "pass"` → `reviewed`. |
 
@@ -525,7 +531,7 @@ sequenceDiagram
 | **Prepare** | `prepare <ticket> .workflow-tmp/mr.json`. Helper kiểm: review đúng HEAD/branch; base là ancestor của HEAD; **mọi file trong diff nằm trong `files` của plan**; metadata và nội dung từng commit không có secret/attribution; body MR có `Refs <key>`. Ghi `handoff.md`. |
 | **Developer** | Tự chạy lệnh push được in ra và tự tạo MR vào base branch, dùng title/body trong `handoff.md`. |
 | **Ghi nhận** | `handoff <ticket> [mr-url]`. Helper đối chiếu HEAD của branch trên remote với code đã review. Khớp → `complete`. Chưa khớp, hoặc không kết nối được remote → từ chối, trạng thái vẫn `prepared`. |
-| **Nội dung MR** | Behavior thay đổi, validation thật (phân biệt local/mock/live), bước vận hành và giới hạn. Không metrics RTK, không secret, không từ khóa tự đóng issue (`Fixes #…`). |
+| **Nội dung MR** | Theo mẫu trong skill: **Tóm tắt** (hình nhỏ nhất làm rõ thay đổi: pseudocode, cây gọi hàm, cây file, sơ đồ, diff phác thảo); **Bằng chứng** trước/sau lấy từ check đã chạy, ghi rõ local/mock/live; **Mức nguy hiểm khi merge** (đảo ngược dễ hay khó, phạm vi ảnh hưởng); **Vận hành và giới hạn**; `Refs <key>`. Không metrics RTK, không secret, không từ khóa tự đóng issue (`Fixes #…`). |
 | **Giới hạn** | URL MR do developer cung cấp; helper không đọc được nội dung MR trên hệ thống hosting. |
 
 ---

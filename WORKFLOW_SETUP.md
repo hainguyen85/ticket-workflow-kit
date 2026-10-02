@@ -10,6 +10,7 @@ Copy các mục sau vào root repo source và commit:
 .agents/skills/            # 6 skills task-*
 .agents/workflow/          # CLI, helpers, CONTRACT, tests
 .agents/TASK-SKILLS-GUIDE.md  # tài liệu training về kiến trúc và workflow
+.agents/CREDITS.md         # ghi công các kỹ thuật phỏng theo nguồn ngoài
 .agents/workflow.config.json
 .agents/workflow.local.example.json
 .codex/hooks.json          # runtime hooks cho Codex

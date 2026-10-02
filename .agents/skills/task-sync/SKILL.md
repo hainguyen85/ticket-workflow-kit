@@ -1,6 +1,8 @@
 ---
 name: task-sync
 description: Tạo ticket hoặc nhận CR từ file/nội dung chat, lưu nguồn vào request/ và cập nhật TASK.md với tóm tắt, delta, câu hỏi; không chọn phương án hoặc code.
+argument-hint: "[ticket] <đường dẫn file hoặc mô tả yêu cầu>"
+disable-model-invocation: true
 ---
 
 # Task sync

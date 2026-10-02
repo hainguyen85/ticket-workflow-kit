@@ -1,0 +1,5 @@
+interface:
+  display_name: "Task review"
+  short_description: "Review code và evidence theo hai trục"
+policy:
+  allow_implicit_invocation: false

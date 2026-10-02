@@ -1,0 +1,5 @@
+interface:
+  display_name: "Task finalize"
+  short_description: "Chốt PLAN và trình duyệt"
+policy:
+  allow_implicit_invocation: false
