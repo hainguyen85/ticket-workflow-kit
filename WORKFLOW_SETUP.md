@@ -27,8 +27,12 @@ Thêm vào `.gitignore` của repo source:
 .workflow-tmp/
 .claude/settings.local.json
 .claude/skills/task-*
-# Chỉ khi đặt hồ sơ bên trong repo source, ví dụ:
+# Chỉ khi đặt hồ sơ bên trong repo source. Clone repo hồ sơ vào một thư mục con:
 # team-docs/
+# Hoặc dùng chính thư mục docs/ của repo source (cả ba đường dẫn):
+# docs/tickets/
+# docs/GLOSSARY.md
+# docs/adr/
 ```
 
 `.claude/settings.json` phải được commit (không ignore cả thư mục `.claude/`), vì nó chứa hooks dùng chung của team.
@@ -43,6 +47,8 @@ Chỉnh `.agents/workflow.config.json` cho dự án (commit, dùng chung cả te
 | `git.baseBranch` | Branch đích của MR | `main` |
 | `git.protectedBranches` | Nhánh không được push từ máy dev | `["main"]` |
 | `docs.ticketsPath` | Thư mục ticket bên trong repo hồ sơ | `docs/tickets` |
+| `docs.glossaryPath` | File glossary dùng chung, bên trong repo hồ sơ và ngoài thư mục ticket | `docs/GLOSSARY.md` |
+| `docs.adrPath` | Thư mục ADR dùng chung, bên trong repo hồ sơ và ngoài thư mục ticket | `docs/adr` |
 | `checks.timeoutSeconds` | Timeout mặc định của một check | `600` |
 | `tickets.types` | Các loại ticket và prefix của key tự sinh. File đi kèm bộ kit khai thêm `"bug": "BUG"` | `{"req": "REQ", "cr": "CR"}` |
 | `tickets.defaultType` | Loại dùng khi không truyền `--type` | `req` |
@@ -72,13 +78,18 @@ Không có token nào cần cấu hình: helper không gọi API hosting. Fetch/
 ## Hồ sơ ticket
 
 ```text
-<docsRepo>/docs/tickets/<key>-<slug>/
-├── TASK.md        # Yêu cầu, hiện trạng, quyết định và bước tiếp theo
-├── PLAN.md        # AC, kế hoạch theo task, checks và approval
-├── CHECKS.md      # Kết quả thực, findings và bàn giao
-├── request/       # Nguồn yêu cầu theo revision: r1/, r2/ (CR)…
-└── .workflow/     # State, manifest, lịch sử và evidence máy quản lý
+<docsRepo>/docs/
+├── GLOSSARY.md    # Thuật ngữ nghiệp vụ, dùng chung mọi ticket (agent sửa trực tiếp)
+├── adr/           # Quyết định khó đảo ngược: NNNN-<slug>.md
+└── tickets/<key>-<slug>/
+    ├── TASK.md        # Yêu cầu, hiện trạng, quyết định và bước tiếp theo
+    ├── PLAN.md        # AC, kế hoạch theo task, checks và approval
+    ├── CHECKS.md      # Kết quả thực, findings và bàn giao
+    ├── request/       # Nguồn yêu cầu theo revision: r1/, r2/ (CR)…
+    └── .workflow/     # State, manifest, lịch sử và evidence máy quản lý
 ```
+
+Glossary và ADR được tạo khi có nội dung đầu tiên; định dạng ở `.agents/workflow/GLOSSARY-ADR.md`.
 
 Ticket ID là `<key>-<slug>`. Key tự sinh có dạng `<PREFIX>-YYMMDD-HHMM`, prefix theo loại ticket (`REQ` cho yêu cầu mới, `BUG` cho lỗi, `CR` cho thay đổi yêu cầu sau bàn giao); nguồn có mã từ hệ thống ngoài thì dùng mã đó (vd. `GL-123`). Slug 2–6 từ ASCII do agent đặt. Ví dụ: `REQ-260930-1415-note-search`. Các lệnh nhận ID đầy đủ hoặc chỉ key.
 

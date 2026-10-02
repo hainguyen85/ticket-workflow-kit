@@ -49,6 +49,7 @@ Giới hạn đã biết: helper không đọc được khung chat nên không k
 - Hồ sơ nằm trong chính repo source và bị ignore thì không đi theo repo đó tới team; helper báo `docsRepo.ignored` để người dùng biết phải chia sẻ bằng cách khác (ví dụ thư mục đó là một clone của repo hồ sơ).
 - Toàn bộ thư mục ticket được commit, kể cả nguồn yêu cầu và log check (quyết định của team). Redaction secret chỉ là best effort, nên quyền đọc repo hồ sơ phải đặt tương ứng.
 - Ràng buộc: một ticket chỉ ghi từ một máy tại một thời điểm (`state.json` không merge được).
+- Glossary (`docs/GLOSSARY.md`) và ADR (`docs/adr/`) cũng nằm trong repo hồ sơ, cạnh thư mục ticket, để dùng chung và chia sẻ cùng một đường với hồ sơ. Đặt chúng trong repo source sẽ buộc mỗi lần chốt một thuật ngữ phải đi qua cổng `files` của plan và làm đổi fingerprint của code. Chúng là Markdown thường, helper chỉ biết vị trí; cùng quy tắc ignore với thư mục hồ sơ khi nằm trong repo source.
 
 ### 4. `task-release` → `task-handoff`
 

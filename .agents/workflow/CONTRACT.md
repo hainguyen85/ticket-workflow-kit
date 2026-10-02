@@ -14,11 +14,11 @@ Leader tạo ticket: chạy Sync và Analyze, rồi chia sẻ repo hồ sơ. Dev
 
 Mọi skill task-* làm bốn việc dưới đây theo cùng một cách; mỗi skill chỉ ghi thêm phần riêng của bước đó.
 
-**Bắt đầu.** Lấy ticket ID (`<key>-<slug>`, hoặc chỉ key) từ yêu cầu hiện tại và chạy `status <ticket>`: kết quả xác nhận đúng ticket, thư mục hồ sơ, `next` và `reason`. Ticket và repo luôn lấy từ yêu cầu và từ kết quả lệnh, không suy đoán. Đọc ba view hiện hành cùng phần nguồn và code liên quan; khi nguồn, code hay context vừa đổi thì đọc phần thay đổi và evidence bị ảnh hưởng. Lịch sử cũ chỉ đọc khi cần truy một căn cứ. Cấu hình do helper nạp: file env, khóa và kho credential nằm ngoài phạm vi đọc của agent.
+**Bắt đầu.** Lấy ticket ID (`<key>-<slug>`, hoặc chỉ key) từ yêu cầu hiện tại và chạy `status <ticket>`: kết quả xác nhận đúng ticket, thư mục hồ sơ, `next` và `reason`. Ticket và repo luôn lấy từ yêu cầu và từ kết quả lệnh, không suy đoán. Đọc ba view hiện hành cùng phần nguồn và code liên quan; khi nguồn, code hay context vừa đổi thì đọc phần thay đổi và evidence bị ảnh hưởng. Lịch sử cũ chỉ đọc khi cần truy một căn cứ. Khi file glossary (`target.glossary` trong kết quả lệnh) tồn tại, đọc nó và dùng đúng thuật ngữ trong đó khi đặt tên trong tài liệu, plan, code, test và nội dung MR; ADR trong `target.adr` đọc khi công việc chạm tới vùng của quyết định đó. Cấu hình do helper nạp: file env, khóa và kho credential nằm ngoài phạm vi đọc của agent.
 
 **Ghi tài liệu.** Soạn input JSON trong `.workflow-tmp/` theo mục "Schema stage", kèm `revision` hiện hành và `change: {summary, reason}` ngắn gọn, rồi ghi bằng `record`. Helper tự ghi author, thời điểm, version và changelog (mục "Phiên bản, author và changelog"). Bản đã ghi là bất biến: muốn đổi thì ghi một bản mới. Approval và kết quả check chỉ đến từ lời duyệt thật và từ lệnh `check`.
 
-**Chia sẻ hồ sơ.** Khi kết quả lệnh có `docsRepo.uncommitted: true`, commit phần hồ sơ của ticket trong repo hồ sơ với message `docs(ticket): <ticket> <bước>`, metadata trung lập. Việc push do người dùng làm.
+**Chia sẻ hồ sơ.** Khi kết quả lệnh có `docsRepo.uncommitted: true`, commit phần hồ sơ của ticket trong repo hồ sơ, cùng glossary và ADR nếu bước này đã sửa chúng, với message `docs(ticket): <ticket> <bước>`, metadata trung lập. Việc push do người dùng làm.
 
 **Kết thúc.** Báo cáo năm ý: đã làm gì; phát hiện chính; trạng thái thật theo `status`, kể cả phần chưa làm hoặc chưa kiểm; tài liệu hiện hành vừa đổi (TASK, PLAN hay CHECKS); bước tiếp theo.
 
@@ -44,19 +44,22 @@ Hồ sơ nằm trong **repo hồ sơ**, thường là một Git repo riêng. `do
 Thư mục hồ sơ cũng có thể nằm **bên trong repo source** (một repo hồ sơ clone vào thư mục con, hoặc chính `docs/tickets` của repo source), với điều kiện nó được liệt kê trong `.gitignore` của repo source. Helper kiểm điều này khi nạp cấu hình: hồ sơ được ghi liên tục, nếu không bị ignore thì mọi lần ghi sẽ làm bẩn worktree và đổi fingerprint của code. Hồ sơ bị ignore trong chính repo source thì không được chia sẻ qua repo đó; `status`/`doctor` báo `docsRepo.ignored: true`.
 
 ```text
-<docsRepo>/docs/tickets/<key>-<slug>/
-├── TASK.md
-├── PLAN.md
-├── CHECKS.md
-├── request/
-│   ├── r1/<file gốc> | chat.md
-│   └── r2/…                      # CR
-└── .workflow/
-    ├── state.json
-    ├── sync/<hash>.json          # manifest nguồn theo revision
-    ├── <stage>/<event-id>/record.json
-    ├── evidence/<run-id>.json + .log
-    └── observations/<event-id>.json
+<docsRepo>/docs/
+├── GLOSSARY.md                       # thuật ngữ nghiệp vụ, dùng chung mọi ticket
+├── adr/NNNN-<slug>.md                # quyết định khó đảo ngược, dùng chung mọi ticket
+└── tickets/<key>-<slug>/
+    ├── TASK.md
+    ├── PLAN.md
+    ├── CHECKS.md
+    ├── request/
+    │   ├── r1/<file gốc> | chat.md
+    │   └── r2/…                      # CR
+    └── .workflow/
+        ├── state.json
+        ├── sync/<hash>.json          # manifest nguồn theo revision
+        ├── <stage>/<event-id>/record.json
+        ├── evidence/<run-id>.json + .log
+        └── observations/<event-id>.json
 ```
 
 Helper dựng ba views từ immutable records. Không sửa state/record/view/request bằng tay. Mỗi stage chỉ soạn một Markdown ngắn: intake/analysis `task.md`, finalize `plan.md`, checkpoint/implement/review `checks.md`. Approval và runtime observations là records, không yêu cầu docs mới.
@@ -68,6 +71,16 @@ TASK: kết quả mong muốn, nguồn, observed/inferred/unknown, phương án/
 PLAN: hành vi/AC duy nhất, phương án đã chọn, steps có phụ thuộc và cách verify, files/scope, assumptions/risk, quyền thao tác và phục hồi khi liên quan. Agent xác định phần việc theo task. Không bắt task văn bản có DB/browser; không coi compile đủ cho thay đổi cần runtime.
 
 CHECKS: tiến độ thực tế, AC/check IDs, command/exit/evidence, findings, blocker/next action, trạng thái bàn giao và URL MR. Current views hiển thị status đã ghi; dùng `status` để kiểm freshness trước chuyển bước. Không đọc toàn bộ lịch sử khi resume.
+
+### Glossary và ADR
+
+Glossary (thuật ngữ nghiệp vụ) và ADR (quyết định khó đảo ngược) dùng chung cho mọi ticket và nằm trong repo hồ sơ, bên ngoài thư mục ticket. Vị trí khai trong `.agents/workflow.config.json`: `docs.glossaryPath` (mặc định `docs/GLOSSARY.md`) và `docs.adrPath` (mặc định `docs/adr`); mọi lệnh trả hai đường dẫn tuyệt đối này trong `target.glossary` và `target.adr`. Định dạng và quy tắc viết nằm ở [GLOSSARY-ADR.md](GLOSSARY-ADR.md).
+
+- Chúng là Markdown thường: agent sửa trực tiếp, helper không băm, không tạo record và không tạo file thay agent. File được tạo khi có nội dung đầu tiên để ghi.
+- Analyze là bước chủ động cập nhật glossary và đề nghị ADR; các bước khác đọc để đặt tên.
+- TASK.md và PLAN.md trỏ tới ADR bằng tên file thay vì chép lại nội dung.
+- `docsRepo.uncommitted` của `status` và `sync` tính cả thư mục ticket lẫn hai đường dẫn này.
+- Khi nằm trong repo source, hai đường dẫn này phải được `.gitignore` của repo source bỏ qua, cùng quy tắc với thư mục hồ sơ; helper kiểm khi nạp cấu hình.
 
 ### Nguồn yêu cầu và revision
 

@@ -4,7 +4,7 @@ CLI duy nhất: `node .agents/workflow/task.mjs`. Helpers chỉ dùng Node built
 
 | Module (`lib/`) | Trách nhiệm |
 |---|---|
-| `config.mjs` | Đọc `.agents/workflow.config.json` (commit) và `.agents/workflow.local.json` (theo máy); kiểm thư mục hồ sơ nằm ngoài repo source hoặc được repo source ignore; quy tắc key/slug; redaction. |
+| `config.mjs` | Đọc `.agents/workflow.config.json` (commit) và `.agents/workflow.local.json` (theo máy); vị trí thư mục hồ sơ, glossary và ADR, kiểm chúng nằm ngoài repo source hoặc được repo source ignore; quy tắc key/slug; redaction. |
 | `source.mjs` | Đọc và kiểm nguồn yêu cầu từ file/chat: tên, kích thước, mẫu secret. |
 | `vault.mjs` | Thư mục ticket, khóa `.workflow-lock`, `request/r<N>`, manifest nguồn, revision, `state.json`. Từ chối symlink dưới repo hồ sơ. |
 | `stages.mjs` | Ghi record bất biến theo stage, approval, vô hiệu hóa stage phía sau. |
@@ -17,6 +17,8 @@ CLI duy nhất: `node .agents/workflow/task.mjs`. Helpers chỉ dùng Node built
 | `agent-hook.mjs`, `git-hook.mjs`, `setup-hooks.mjs` | Nối policy vào runtime hooks (Codex: `.codex/hooks.json`; Claude Code: `.claude/settings.json`) và Git hooks. |
 | `skill-links.mjs` | Liên kết `.claude/skills/task-*` tới `.agents/skills/task-*` cho Claude Code (symlink, hoặc junction trên Windows). |
 | `git.mjs` | Gọi Git, đọc identity. |
+
+Glossary và ADR ([GLOSSARY-ADR.md](GLOSSARY-ADR.md)) nằm ngoài phạm vi ghi của helper: nó chỉ tính đường dẫn, trả chúng trong `target`, và đưa chúng vào phạm vi của `docsRepo.uncommitted`.
 
 ## State và phục hồi
 

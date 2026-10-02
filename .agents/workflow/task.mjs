@@ -98,7 +98,10 @@ function docsRepoStatus(settings, directory = null) {
       ignored: true,
       note: 'Thư mục hồ sơ đang bị Git ignore; hồ sơ không được chia sẻ qua repo này.',
     }
-  const scope = directory ? ['--', ticketRoot(directory)] : []
+  // A ticket step may also have edited the shared glossary or added a decision record.
+  const scope = directory
+    ? ['--', ticketRoot(directory), settings.glossaryFile, settings.adrRoot]
+    : []
   const dirty = tryGit(settings.docsRepo, [
     'status',
     '--porcelain',

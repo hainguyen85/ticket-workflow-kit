@@ -131,6 +131,16 @@ async function readJson(file, label) {
   return value
 }
 
+// A location inside the documents repo: safe segments joined by "/", never absolute or "..".
+function docsPath(value, label) {
+  if (
+    typeof value !== 'string' ||
+    !value.split('/').every((part) => /^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(part))
+  )
+    fail(`${label} không hợp lệ.`)
+  return value.split('/')
+}
+
 const branchName = (value) =>
   typeof value === 'string' &&
   /^[A-Za-z0-9][A-Za-z0-9/_.-]*$/.test(value) &&
@@ -152,9 +162,13 @@ export async function loadConfig(root = repoRoot) {
   if (!Array.isArray(protectedBranches) || !protectedBranches.every(branchName))
     fail('git.protectedBranches không hợp lệ.')
   const ticketsPath = config.docs?.ticketsPath ?? 'docs/tickets'
-  if (typeof ticketsPath !== 'string' || !ticketsPath) fail('docs.ticketsPath không hợp lệ.')
-  const segments = ticketsPath.split('/')
-  segments.forEach(segment)
+  const segments = docsPath(ticketsPath, 'docs.ticketsPath')
+  const glossaryPath = config.docs?.glossaryPath ?? 'docs/GLOSSARY.md'
+  const adrPath = config.docs?.adrPath ?? 'docs/adr'
+  const shared = [
+    ['docs.glossaryPath', docsPath(glossaryPath, 'docs.glossaryPath')],
+    ['docs.adrPath', docsPath(adrPath, 'docs.adrPath')],
+  ]
   const timeoutSeconds = config.checks?.timeoutSeconds ?? 600
   if (!Number.isInteger(timeoutSeconds) || timeoutSeconds < 1 || timeoutSeconds > 7200)
     fail('checks.timeoutSeconds phải là số nguyên từ 1 đến 7200.')
@@ -177,26 +191,37 @@ export async function loadConfig(root = repoRoot) {
   // Ticket records are written continuously. Inside the source repo they must be ignored by it,
   // otherwise every record would dirty the worktree and change the code fingerprint.
   const insideSource = isWithin(canonicalRepo, docsRoot)
-  if (insideSource) {
-    const probe = path.relative(canonicalRepo, path.join(docsRoot, '.probe'))
-    const ignored = spawnSync('git', ['check-ignore', '-q', '--', probe.split(path.sep).join('/')], {
-      cwd: canonicalRepo,
-      stdio: 'ignore',
-    })
-    if (ignored.status !== 0)
-      fail(
-        'Thư mục hồ sơ nằm trong repo source thì phải được thêm vào .gitignore của repo source.',
-      )
-  }
+  const ignoredBySource = (target) =>
+    spawnSync(
+      'git',
+      ['check-ignore', '-q', '--', path.relative(canonicalRepo, target).split(path.sep).join('/')],
+      { cwd: canonicalRepo, stdio: 'ignore' },
+    ).status === 0
+  if (insideSource && !ignoredBySource(path.join(docsRoot, '.probe')))
+    fail('Thư mục hồ sơ nằm trong repo source thì phải được thêm vào .gitignore của repo source.')
+  // The glossary and the decision records are shared by every ticket and edited as plain
+  // Markdown. They follow the same rule: inside the source repo they must be ignored by it.
+  const [glossaryFile, adrRoot] = shared.map(([label, parts]) => {
+    const target = path.join(docsRepo, ...parts)
+    if (isWithin(docsRoot, target)) fail(`${label} phải nằm ngoài docs.ticketsPath.`)
+    return target
+  })
+  if (isWithin(adrRoot, glossaryFile)) fail('docs.glossaryPath phải nằm ngoài docs.adrPath.')
+  if (isWithin(canonicalRepo, glossaryFile) && !ignoredBySource(glossaryFile))
+    fail('docs.glossaryPath nằm trong repo source thì phải được thêm vào .gitignore của repo source.')
+  if (isWithin(canonicalRepo, adrRoot) && !ignoredBySource(path.join(adrRoot, '.probe')))
+    fail('docs.adrPath nằm trong repo source thì phải được thêm vào .gitignore của repo source.')
   return {
     config: {
       git: { remote, baseBranch, protectedBranches: [...new Set([...protectedBranches, baseBranch])] },
-      docs: { ticketsPath },
+      docs: { ticketsPath, glossaryPath, adrPath },
       checks: { timeoutSeconds },
       tickets,
     },
     docsRepo,
     docsRoot,
+    glossaryFile,
+    adrRoot,
     insideSource,
     repoRoot: canonicalRepo,
   }
@@ -206,6 +231,8 @@ export function publicTarget(settings, ticket = null) {
   return {
     ticket,
     documents: settings.docsRoot,
+    glossary: settings.glossaryFile,
+    adr: settings.adrRoot,
     remote: settings.config.git.remote,
     baseBranch: settings.config.git.baseBranch,
   }

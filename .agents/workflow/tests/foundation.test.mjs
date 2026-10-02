@@ -55,6 +55,8 @@ test('config reads committed policy plus the machine-local documents repo', asyn
   assert.deepEqual(loaded.config.git.protectedBranches, ['develop'])
   assert.equal(loaded.config.checks.timeoutSeconds, 600)
   assert.equal(path.relative(loaded.docsRepo, loaded.docsRoot), path.join('docs', 'tickets'))
+  assert.equal(path.relative(loaded.docsRepo, loaded.glossaryFile), path.join('docs', 'GLOSSARY.md'))
+  assert.equal(path.relative(loaded.docsRepo, loaded.adrRoot), path.join('docs', 'adr'))
   assert.equal(loaded.insideSource, false)
   for (const invalid of [
     { docsRepo: 'relative/path' },
@@ -74,7 +76,12 @@ test('records inside the source repo are accepted only when the source repo igno
   // Tickets folder directly in the source repo: <repo>/docs/tickets.
   await writeFile(local, JSON.stringify({ docsRepo: settings.repoRoot }))
   await assert.rejects(loadConfig(settings.repoRoot), /\.gitignore/)
+  // The shared glossary and decision records sit next to the tickets and follow the same rule.
   await writeFile(ignore, 'docs/tickets/\n')
+  await assert.rejects(loadConfig(settings.repoRoot), /docs\.glossaryPath.*\.gitignore/)
+  await writeFile(ignore, 'docs/tickets/\ndocs/GLOSSARY.md\n')
+  await assert.rejects(loadConfig(settings.repoRoot), /docs\.adrPath.*\.gitignore/)
+  await writeFile(ignore, 'docs/tickets/\ndocs/GLOSSARY.md\ndocs/adr/\n')
   const direct = await loadConfig(settings.repoRoot)
   assert.equal(direct.insideSource, true)
   assert.equal(path.relative(direct.repoRoot, direct.docsRoot), path.join('docs', 'tickets'))
@@ -85,6 +92,36 @@ test('records inside the source repo are accepted only when the source repo igno
   await assert.rejects(loadConfig(settings.repoRoot), /\.gitignore/)
   await writeFile(ignore, 'team-docs/\n')
   assert.equal((await loadConfig(settings.repoRoot)).insideSource, true)
+})
+test('glossary and decision record locations are configurable inside the documents repo', async (t) => {
+  const { settings } = await configured(t)
+  const file = path.join(settings.repoRoot, '.agents/workflow.config.json')
+  const write = (docs) => writeFile(file, JSON.stringify({ schemaVersion: 3, docs }))
+  await write({ glossaryPath: 'domain/terms.md', adrPath: 'domain/decisions' })
+  const loaded = await loadConfig(settings.repoRoot)
+  assert.equal(path.relative(loaded.docsRepo, loaded.glossaryFile), path.join('domain', 'terms.md'))
+  assert.equal(path.relative(loaded.docsRepo, loaded.adrRoot), path.join('domain', 'decisions'))
+  assert.deepEqual(loaded.config.docs, {
+    ticketsPath: 'docs/tickets',
+    glossaryPath: 'domain/terms.md',
+    adrPath: 'domain/decisions',
+  })
+  for (const [docs, message] of [
+    [{ glossaryPath: '../GLOSSARY.md' }, /docs\.glossaryPath/],
+    [{ glossaryPath: '/abs/GLOSSARY.md' }, /docs\.glossaryPath/],
+    [{ glossaryPath: '' }, /docs\.glossaryPath/],
+    [{ glossaryPath: 7 }, /docs\.glossaryPath/],
+    [{ adrPath: 'docs\\adr' }, /docs\.adrPath/],
+    [{ adrPath: 'docs//adr' }, /docs\.adrPath/],
+    [{ ticketsPath: '../tickets' }, /docs\.ticketsPath/],
+    // The tickets folder is managed by the helper; shared documents stay out of it.
+    [{ glossaryPath: 'docs/tickets/GLOSSARY.md' }, /docs\.glossaryPath.*docs\.ticketsPath/],
+    [{ adrPath: 'docs/tickets/adr' }, /docs\.adrPath.*docs\.ticketsPath/],
+    [{ adrPath: 'docs', glossaryPath: 'docs/GLOSSARY.md' }, /docs\.glossaryPath.*docs\.adrPath/],
+  ]) {
+    await write(docs)
+    await assert.rejects(loadConfig(settings.repoRoot), message)
+  }
 })
 test('setup creates only a blank local template and preserves an existing one', async (t) => {
   const { settings, local } = await configured(t)

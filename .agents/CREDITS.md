@@ -13,6 +13,7 @@ Một số kỹ thuật trong các skill task-* được phỏng theo bộ skill
   - `pr` → mẫu body MR trong `task-handoff`. Skill `pr` ghi công skill `show-me` của Dex Horthy (Humanlayer).
   - `writing-for-agents` → cách viết 6 skill: điều kiện hoàn thành cho từng bước, câu khẳng định thay câu cấm, mỗi ý một chỗ, description nêu khi nào dùng.
   - `diagnosing-bugs` → nhánh ticket loại `bug`: giả thuyết xếp theo khả năng kèm dự đoán kiểm được trong `task-analyze`; tiền tố riêng cho log gỡ lỗi tạm và việc ghi nguyên nhân trong `task-implement`, `task-handoff`; test hồi quy tại điểm đặt đúng trong `task-finalize`. Phần dựng lệnh tái hiện lỗi của skill gốc không được lấy.
+  - `domain-modeling` → `workflow/GLOSSARY-ADR.md` (định dạng glossary, ba điều kiện của ADR) và bước "Chốt thuật ngữ" trong `task-analyze`. Khác bản gốc: glossary và ADR nằm trong repo hồ sơ, không nằm trong repo source; không có glossary theo từng phân hệ.
   - Quy ước của repo đó về `agents/openai.yaml` → file tên hiển thị cho Codex cạnh mỗi `SKILL.md`.
 
 ## Martin Fowler

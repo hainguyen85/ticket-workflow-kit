@@ -12,7 +12,7 @@ export const author = 'Workflow Tester <tester@example.test>'
 export const change = { summary: 'Record test stage', reason: 'Exercise workflow contract' }
 export const config = () => ({
   git: { remote: 'origin', baseBranch: 'main', protectedBranches: ['main'] },
-  docs: { ticketsPath: 'docs/tickets' },
+  docs: { ticketsPath: 'docs/tickets', glossaryPath: 'docs/GLOSSARY.md', adrPath: 'docs/adr' },
   checks: { timeoutSeconds: 60 },
   tickets: { types: { req: 'REQ', cr: 'CR' }, defaultType: 'req', changeRequestType: 'cr' },
 })
@@ -43,6 +43,8 @@ export async function workspace(t, file = 'feature.txt', { docsInside = false } 
     repoRoot,
     docsRepo,
     docsRoot: path.join(docsRepo, 'docs', 'tickets'),
+    glossaryFile: path.join(docsRepo, 'docs', 'GLOSSARY.md'),
+    adrRoot: path.join(docsRepo, 'docs', 'adr'),
     remote,
     author,
     config: config(),

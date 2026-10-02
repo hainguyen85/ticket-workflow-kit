@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Căn cứ | [TASK-SKILLS-BLUEPRINT.md](TASK-SKILLS-BLUEPRINT.md) bản 1.10, mục 13.4 (các việc 0, A–E) và R9, R17, R20, R21 |
-| Trạng thái | **G0, G1, G2 đã làm** (2026-10-02). G3–G6 chưa bắt đầu; mỗi gói chỉ làm khi người dùng yêu cầu. |
+| Căn cứ | [TASK-SKILLS-BLUEPRINT.md](TASK-SKILLS-BLUEPRINT.md) bản 1.11, mục 13.4 (các việc 0, A–E) và R9, R17, R20, R21 |
+| Trạng thái | **G0–G3 đã làm** (2026-10-02). G4–G6 chưa bắt đầu; mỗi gói chỉ làm khi người dùng yêu cầu. |
 | Người đọc | Người hoặc agent sẽ thực hiện việc cập nhật |
 
 Kế hoạch này biến các quyết định đã chốt trong blueprint thành các gói việc làm được. Nó không thêm quyết định mới: chỗ nào kế hoạch và blueprint khác nhau thì blueprint đúng, và phải sửa kế hoạch.
@@ -120,7 +120,7 @@ Khung mỗi skill:
 
 **Kết quả (2026-10-02):** test mới pass. Trên một repo thử, `sync --type bug` tạo ticket `BUG-261002-1144-search-empty-keyword`, `type: bug`. Ngoài bảng trên, description của `task-sync` thêm điều kiện "có báo lỗi" để agent chọn đúng skill. Chưa làm: một ticket BUG thử đi qua analyze trên một dự án có code thật, để xem TASK.md thể hiện đường lần từ stack trace và giả thuyết.
 
-### G3. Glossary và ADR trong repo hồ sơ
+### G3. Glossary và ADR trong repo hồ sơ — ĐÃ LÀM
 
 **Mục tiêu:** có một glossary và thư mục ADR dùng chung trong repo hồ sơ; analyze cập nhật, các bước khác đọc. Đây là gói duy nhất sửa helper.
 
@@ -130,7 +130,7 @@ Khung mỗi skill:
 | `.agents/workflow/task.mjs` | `status`, `doctor`, `sync` trả `target.glossary` và `target.adr`. |
 | `.agents/workflow/tests/foundation.test.mjs`, `cli.test.mjs` | Mặc định, giá trị tùy biến, đường dẫn không hợp lệ, quy tắc ignore; trường mới trong output. |
 | `task-analyze/SKILL.md` | Chủ động: đối chiếu thuật ngữ trong yêu cầu với glossary, hỏi lại khi một từ mang hai nghĩa, cập nhật glossary ngay khi chốt; đề nghị ADR khi đủ ba điều kiện. |
-| `task-finalize`, `task-implement`, `task-review`, `task-handoff` | Một dòng: đọc glossary để đặt tên trong plan, code, test, MR. |
+| `task-finalize`, `task-implement`, `task-review`, `task-handoff` | Không sửa. Việc đọc glossary để đặt tên trong plan, code, test, MR nằm một chỗ, ở phần "Bắt đầu" của "Quy ước chung cho mọi bước" trong CONTRACT (blueprint D28). |
 | `.agents/workflow/` | File tham chiếu mới về định dạng glossary và ADR. |
 | CONTRACT, guide, WORKFLOW_SETUP, README của workflow | Vị trí, quy tắc, bảng cấu hình. |
 
@@ -139,6 +139,10 @@ Glossary và ADR là Markdown thường do agent sửa trực tiếp; helper kh�
 **Nghiệm thu:** bộ test đầy đủ pass; sau một ticket thử, glossary có thuật ngữ mới và `git status` của repo source sạch.
 
 **Rủi ro:** `docsRepo.uncommitted` hiện chỉ xét thư mục ticket, nên thay đổi glossary có thể bị quên commit. Xử lý trong gói này: mở rộng phạm vi kiểm sang hai đường dẫn mới.
+
+**Kết quả (2026-10-02):** helper có `docs.glossaryPath`, `docs.adrPath`; mọi lệnh trả `target.glossary`, `target.adr`; `docsRepo.uncommitted` của `status`/`sync` tính cả hai đường dẫn. File tham chiếu là `.agents/workflow/GLOSSARY-ADR.md`. `task-analyze` có bước "Chốt thuật ngữ" và đề nghị ADR. Bộ test đầy đủ: 65 test, 63 pass, 2 skip (symlink trên Windows), 0 fail. Thêm so với bảng trên: hai đường dẫn phải nằm ngoài thư mục ticket (D29). Chưa làm: một ticket thử để thấy glossary có thuật ngữ mới; thử việc agent sửa file trong repo hồ sơ trên Codex.
+
+**Thay đổi hành vi cần biết:** dự án đặt hồ sơ trực tiếp trong `docs/tickets` của repo source phải ignore thêm `docs/GLOSSARY.md` và `docs/adr/`; nếu không, mọi lệnh dừng ở bước nạp cấu hình.
 
 ### G4. Skill `task-retro`
 

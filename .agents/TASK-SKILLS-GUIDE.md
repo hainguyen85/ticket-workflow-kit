@@ -239,6 +239,30 @@ Việc helper liên tục ghi hồ sơ **không** được làm bẩn worktree h
 - **Mỗi lần ghi phải kèm `change: {summary, reason}`**; helper tự ghi author (Git identity của người chạy lệnh), thời điểm, version, changelog. Leader và developer ghi vào cùng một hồ sơ thì mỗi bản ghi mang đúng tên người ghi.
 - **Helper không commit/push repo hồ sơ.** Xem [mục 7](#7-quy-ước-git-mr-và-repo-hồ-sơ).
 
+#### Glossary và ADR: tài liệu dùng chung của mọi ticket
+
+Bên cạnh thư mục `tickets/`, repo hồ sơ có hai thứ dùng chung:
+
+```text
+<docsRepo>/docs/
+├── GLOSSARY.md            # Thuật ngữ nghiệp vụ: mỗi khái niệm một tên
+├── adr/NNNN-<slug>.md     # Mỗi quyết định khó đảo ngược một file
+└── tickets/…
+```
+
+| | Glossary | ADR |
+|---|---|---|
+| **Ghi gì** | Thuật ngữ nghiệp vụ, định nghĩa một hai câu, các từ nên tránh, quan hệ giữa các thuật ngữ, chỗ mơ hồ đã giải quyết | Một quyết định và lý do của nó, một đoạn văn là đủ |
+| **Không ghi gì** | Chi tiết cài đặt, tên class, quyết định kỹ thuật | Quyết định dễ đảo ngược, hiển nhiên, hoặc không có phương án khác |
+| **Ai cập nhật** | Agent ở bước Analyze, ngay khi một thuật ngữ được chốt | Agent đề nghị ở bước Analyze; người quyết định đồng ý thì mới ghi |
+| **Ai đọc** | Mọi bước, để đặt tên trong plan, code, test, MR | Bước nào chạm tới vùng của quyết định đó |
+
+ADR chỉ viết khi **cả ba** điều đúng: quyết định khó đảo ngược, gây ngạc nhiên nếu thiếu bối cảnh, và là kết quả của một đánh đổi thật. TASK.md hoặc PLAN.md trỏ tới ADR thay vì chép lại.
+
+Khác với hồ sơ ticket, hai thứ này là **Markdown thường**: agent sửa trực tiếp, helper không băm và không tạo record. Chúng được commit cùng lúc với hồ sơ của ticket; `docsRepo.uncommitted` của `status` tính cả hai. Vị trí đổi được bằng `docs.glossaryPath` và `docs.adrPath` trong `.agents/workflow.config.json`; kết quả `status` trả đường dẫn thật trong `target.glossary` và `target.adr`. Định dạng chi tiết: [GLOSSARY-ADR.md](workflow/GLOSSARY-ADR.md).
+
+Với Claude Code, repo hồ sơ nằm ngoài thư mục dự án nên lần đầu sửa glossary agent sẽ xin quyền ghi; cho phép, hoặc thêm repo hồ sơ làm thư mục làm việc bằng `/add-dir`.
+
 ### 4.5 State machine và dispatcher
 
 #### Vòng đời trạng thái
@@ -441,6 +465,7 @@ Sync lại cùng nội dung không tạo revision. Giới hạn: 20 file/lần, 
 | **Phương án** | Đủ đánh đổi để quyết định. Một hướng rõ ràng + lựa chọn thay thế ngắn là đủ. |
 | **Không làm** | Không sửa code. Không chạy thao tác phá hủy dữ liệu. Chỉ hỏi những **quyết định** còn thiếu; dữ kiện thu thập được thì tự điều tra. |
 | **Cách hỏi** | Theo vòng: mỗi vòng gồm mọi câu hỏi quyết định đã đủ điều kiện hỏi, đánh số, mỗi câu kèm đáp án đề xuất để trả lời được bằng một từ. Câu chưa ai trả lời được ngay thì ghi vào mục câu hỏi mở của TASK.md kèm đáp án đề xuất. |
+| **Thuật ngữ** | Đối chiếu từ ngữ trong yêu cầu với glossary và với tên trong code; một từ mang hai nghĩa thì hỏi lại; thuật ngữ vừa chốt ghi vào glossary ngay. Quyết định đủ ba điều kiện thì đề nghị ghi ADR. Xem [mục 4.4](#44-hồ-sơ-ticket). |
 
 Người lập plan thường không phải người phân tích, nên **TASK.md phải tự đủ**: developer đọc là lập được plan, không cần hỏi lại bối cảnh.
 
@@ -683,6 +708,8 @@ Các `<stage>` hợp lệ cho `record`: `intake`, `analysis`, `finalize`, `appro
 | Ticket đã bàn giao: thay đổi yêu cầu sau bàn giao là ticket mới | `sync <ticket>` kèm nguồn mới trên ticket đã bàn giao | Tạo ticket `--type cr --relates-to <ticket>`; hoặc `--reopen` nếu MR chưa merge |
 | Ticket … chưa bàn giao: thay đổi yêu cầu là một revision | Tạo ticket CR trỏ tới ticket đang làm | `sync <ticket> …` trên chính ticket đó |
 | Thư mục hồ sơ nằm trong repo source thì phải được thêm vào .gitignore | Hồ sơ đặt trong repo source nhưng chưa bị ignore | Thêm thư mục đó vào `.gitignore` của repo source, hoặc đặt repo hồ sơ ra ngoài |
+| docs.glossaryPath / docs.adrPath nằm trong repo source thì phải được thêm vào .gitignore | Glossary hoặc thư mục ADR đặt trong repo source nhưng chưa bị ignore | Thêm `docs/GLOSSARY.md` và `docs/adr/` (hoặc đường dẫn đã cấu hình) vào `.gitignore` của repo source |
+| docs.glossaryPath / docs.adrPath phải nằm ngoài docs.ticketsPath | Glossary hoặc ADR được cấu hình vào trong thư mục ticket | Đặt chúng cạnh thư mục ticket, không nằm trong |
 | Nguồn yêu cầu trong request/ đã bị sửa hoặc thiếu | Có người sửa/xóa file trong `request/` | Phục hồi bằng Git của repo hồ sơ |
 | request/r\<N\> đã tồn tại nhưng chưa được state ghi nhận | Lần sync trước bị ngắt | Kiểm, xóa thư mục đó, sync lại |
 | Bản tóm tắt phải đối chiếu đủ từng nguồn hiện hành | `translatedSourceIds` thiếu/thừa | Dùng đúng `sourceIds` mà `status` trả về |

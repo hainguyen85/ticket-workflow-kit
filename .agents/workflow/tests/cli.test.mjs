@@ -123,6 +123,37 @@ test('CLI needs only node: setup, doctor, sync from chat, record and status', as
   // Helper input never dirties the source repo.
   assert.equal(git(settings.repoRoot, ['status', '--porcelain']), '')
 
+  // The shared glossary and decision records are reported next to the tickets folder, and a
+  // step that changed them leaves the documents repo with something to commit.
+  for (const target of [doctor.json.target, created.json.target, status.json.target]) {
+    assert.equal(path.relative(target.documents, target.glossary), path.join('..', 'GLOSSARY.md'))
+    assert.equal(path.relative(target.documents, target.adr), path.join('..', 'adr'))
+  }
+  const commitDocs = () => {
+    git(settings.docsRepo, ['add', '-A'])
+    git(settings.docsRepo, [
+      '-c',
+      'user.name=Workflow Tester',
+      '-c',
+      'user.email=tester@example.test',
+      '-c',
+      'commit.gpgsign=false',
+      'commit',
+      '-m',
+      'docs(ticket): record',
+    ])
+  }
+  commitDocs()
+  assert.equal(run('status', key).json.docsRepo.uncommitted, false)
+  await writeFile(path.join(settings.docsRepo, 'notes.txt'), 'unrelated\n')
+  assert.equal(run('status', key).json.docsRepo.uncommitted, false)
+  await writeFile(status.json.target.glossary, '# Thuật ngữ\n')
+  assert.equal(run('status', key).json.docsRepo.uncommitted, true)
+  commitDocs()
+  await mkdir(status.json.target.adr)
+  await writeFile(path.join(status.json.target.adr, '0001-search-index.md'), '# Chỉ mục tìm kiếm\n')
+  assert.equal(run('status', key).json.docsRepo.uncommitted, true)
+
   for (const command of ['can-implement', 'start']) {
     const blocked = run(command, key)
     assert.equal(blocked.status, 1)
@@ -293,6 +324,11 @@ test('CLI accepts records inside the source repo once ignored, and says they are
   await writeFile(
     path.join(settings.repoRoot, '.gitignore'),
     '.agents/workflow.local.json\n.workflow-tmp/\ndocs/tickets/\n',
+  )
+  assert.match(run('doctor').stderr, /^Task: docs\.glossaryPath nằm trong repo source/)
+  await writeFile(
+    path.join(settings.repoRoot, '.gitignore'),
+    '.agents/workflow.local.json\n.workflow-tmp/\ndocs/tickets/\ndocs/GLOSSARY.md\ndocs/adr/\n',
   )
   git(settings.repoRoot, ['commit', '-am', 'chore: ignore ticket records'])
   const doctor = run('doctor')
