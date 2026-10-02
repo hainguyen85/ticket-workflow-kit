@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Phiên bản blueprint | 1.8 (2026-10-02) |
+| Phiên bản blueprint | 1.9 (2026-10-02) |
 | Trạng thái | Đã thực hiện; code trong repo này là bản tham chiếu |
 | Người đọc | Agent AI hoặc kỹ sư phải thực hiện lại việc chuyển đổi, hoặc cải tiến bộ kit về sau |
 
@@ -393,10 +393,11 @@ Phần chung của mọi skill:
 
 - Frontmatter: `name`, `description` một dòng, `argument-hint`. **Không** đặt `disable-model-invocation` (R21): agent gọi được skill như ở baseline. `agents/openai.yaml` cạnh `SKILL.md` chỉ mang `interface.display_name` và `interface.short_description` cho Codex, không có khối `policy`.
 
-- Mở đầu: dùng ticket ID từ yêu cầu hiện tại, xác nhận bằng `status <ticket>`; không đoán repo/ticket, không đọc env; tuân thủ `.agents/workflow/CONTRACT.md` (ghi rõ đường dẫn này, vì đường dẫn tương đối không đúng khi skill được mở qua liên kết).
-- Khi ghi tài liệu: kèm `change.summary`, `change.reason`; không tự đặt metadata.
-- Khi kết quả báo `docsRepo.uncommitted: true`: commit phần hồ sơ của ticket trong repo hồ sơ (`docs(ticket): <ticket> <bước>`), không push.
-- Kết thúc: báo đã làm, phát hiện chính, trạng thái thật, tài liệu hiện hành, bước tiếp theo.
+- Khung: một dòng mở đầu trỏ tới mục "Quy ước chung cho mọi bước" của `.agents/workflow/CONTRACT.md` (ghi rõ đường dẫn này, vì đường dẫn tương đối không đúng khi skill được mở qua liên kết); các bước đánh số, mỗi bước là một hành động và kết thúc bằng một **điều kiện hoàn thành** kiểm được ("Xong khi …"); phần tham khảo chỉ một số nhánh cần (mẫu MR, hai trục review) nằm sau các bước hoặc trong `references/`.
+- Description nêu skill làm gì và khi nào dùng, theo giá trị `next` của `status`.
+- Câu khẳng định thay cho câu cấm; ranh giới cứng (push, secret, sửa tay hồ sơ, tự tạo approval hay kết quả check) nêu kèm việc phải làm thay.
+- Bốn việc chung của mọi bước (bắt đầu bằng `status`, ghi tài liệu, commit hồ sơ khi `docsRepo.uncommitted`, báo cáo năm ý) và lời văn chuyển bước nằm **một chỗ** trong CONTRACT, mục "Quy ước chung cho mọi bước"; skill không lặp lại.
+- Không có file `references/*-contract.md`; schema của từng stage nằm ở CONTRACT.
 
 Điểm riêng:
 
@@ -567,6 +568,7 @@ Kiểm tay sau khi cài vào một repo thật:
 
 | Phiên bản | Ngày | Thay đổi |
 |---|---|---|
+| 1.9 | 2026-10-02 | **Thực hiện mục 13.4-A (gói G1):** viết lại 6 skill với điều kiện hoàn thành cho từng bước và description nêu khi nào dùng; đưa phần lặp lại vào mục "Quy ước chung cho mọi bước" của CONTRACT; xóa 6 file `references/*-contract.md`. Mục 6 cập nhật theo. Hành vi và thứ tự bước không đổi. |
 | 1.8 | 2026-10-02 | **Thực hiện mục 13.4-0 (gói G0):** gỡ `disable-model-invocation` khỏi 6 skill và khối `policy` khỏi 6 `agents/openai.yaml`; sửa tài liệu training và CREDITS. Mục 6, 13.2, 13.3 cập nhật theo. `task-retro` (13.4-D) không còn ghi là skill chỉ người dùng gọi. |
 | 1.7 | 2026-10-02 | R9 ghi rõ bố cục repo: project Maven Spring Boot ở root, frontend Vue.js trong `frontend/` dùng npm và Vitest. Mục 4.6 và mục 9 ghi rõ check chạy từ root repo, lệnh frontend dùng `npm --prefix frontend`. Chỉ sửa blueprint, chưa thực hiện. |
 | 1.6 | 2026-10-02 | R20 thu hẹp đúng phạm vi: bám sát baseline ở việc tự động các bước và ở trạng thái; thêm khác biệt tech stack (Spring Boot + Vue.js, R9); kỹ thuật từ bộ skill của Matt Pocock vẫn tích hợp (D27). Thêm liên kết tới kế hoạch thực hiện `TASK-SKILLS-UPDATE-PLAN.md`. Chỉ sửa blueprint, chưa thực hiện. |
@@ -606,7 +608,7 @@ Người dùng ──gọi──> task-*  (khung: stage, cổng, evidence, hồ 
 | review | Hai trục Yêu cầu / Chuẩn code; smell nền | `code-review` | Đã làm (v1.2) |
 | handoff | Mẫu body MR | `pr` | Đã làm (v1.2) |
 | mọi skill | Agent gọi được các bước, như baseline (cờ chỉ-người-gọi của v1.2 đã gỡ) | – | Đã làm (v1.8; D25) |
-| mọi skill | Viết lại theo nguyên tắc viết cho agent | `writing-for-agents` | Kế hoạch (13.4-A) |
+| mọi skill | Viết lại theo nguyên tắc viết cho agent | `writing-for-agents` | Đã làm (v1.9) |
 | sync, analyze | Phân tích bug từ mô tả lỗi, stack trace và source code; giả thuyết kiểm được | `diagnosing-bugs` (chỉ lấy phần giả thuyết và dọn log; bỏ phần lệnh tái hiện) | Kế hoạch (13.4-B) |
 | analyze | Glossary và ADR, lưu trong repo hồ sơ | `domain-modeling` | Kế hoạch (13.4-C) |
 | sau handoff | Nhìn lại, cải thiện môi trường của agent; kết quả là tài liệu | `retro` | Kế hoạch (13.4-D) |
@@ -637,7 +639,7 @@ Mỗi mục làm theo quy trình ở mục 10. Thứ tự: 0 → A → B → C �
 - Sửa câu "chỉ chạy khi người dùng gọi" trong tài liệu training và dòng tương ứng trong `.agents/CREDITS.md`.
 - Kết quả: trong Claude Code, ngay sau khi gỡ cờ, sáu skill xuất hiện lại trong danh sách skill agent gọi được. Còn phải kiểm tay: trên Codex, và việc agent tự chuyển implement → review trong một ticket thật. Tiêu chí: trong Claude Code và Codex, sau khi `status` trả `next: review`, agent tự gọi được `task-review` mà người dùng không phải gõ tên skill.
 
-**A. Viết lại 6 skill theo nguyên tắc viết cho agent.** Chỉ sửa nội dung.
+**A. Viết lại 6 skill theo nguyên tắc viết cho agent. — ĐÃ LÀM (v1.9).** Chỉ sửa nội dung; bảng đối chiếu ý cũ → nơi mới ở [G1-SKILL-REWRITE-MAP.md](G1-SKILL-REWRITE-MAP.md). Còn phải kiểm tay: chạy một ticket thử trên Codex và Claude Code.
 
 - Mỗi bước kết thúc bằng một **điều kiện hoàn thành** kiểm được (ví dụ "mọi `sourceIds` có trong `translatedSourceIds`" thay cho "tóm tắt đủ").
 - Viết khẳng định thay cho cấm đoán; giữ câu cấm chỉ cho ranh giới cứng (push, secret, sửa tay hồ sơ) và kèm việc phải làm thay thế.

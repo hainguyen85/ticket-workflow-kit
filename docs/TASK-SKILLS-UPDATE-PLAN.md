@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Căn cứ | [TASK-SKILLS-BLUEPRINT.md](TASK-SKILLS-BLUEPRINT.md) bản 1.8, mục 13.4 (các việc 0, A–E) và R9, R17, R20, R21 |
-| Trạng thái | **G0 đã làm** (2026-10-02). G1–G6 chưa bắt đầu; mỗi gói chỉ làm khi người dùng yêu cầu. |
+| Căn cứ | [TASK-SKILLS-BLUEPRINT.md](TASK-SKILLS-BLUEPRINT.md) bản 1.9, mục 13.4 (các việc 0, A–E) và R9, R17, R20, R21 |
+| Trạng thái | **G0, G1 đã làm** (2026-10-02). G2–G6 chưa bắt đầu; mỗi gói chỉ làm khi người dùng yêu cầu. |
 | Người đọc | Người hoặc agent sẽ thực hiện việc cập nhật |
 
 Kế hoạch này biến các quyết định đã chốt trong blueprint thành các gói việc làm được. Nó không thêm quyết định mới: chỗ nào kế hoạch và blueprint khác nhau thì blueprint đúng, và phải sửa kế hoạch.
@@ -70,7 +70,7 @@ G0 ──> G1 ──> G2 ──> G3 ──> G4 ──> G5 ──> G6
 
 **Rủi ro:** agent tự chạy skill khi người dùng không định làm ticket. Giảm bằng description mô tả đúng điều kiện dùng (xử lý ở G1).
 
-### G1. Viết lại 6 skill
+### G1. Viết lại 6 skill — ĐÃ LÀM
 
 **Mục tiêu:** skill ngắn hơn, mỗi bước có điều kiện hoàn thành kiểm được, mỗi ý một chỗ. Hành vi và thứ tự bước không đổi.
 
@@ -97,6 +97,8 @@ Khung mỗi skill:
 - Không còn đoạn nào lặp nguyên văn giữa hai skill.
 - Link trong skill, CONTRACT, guide không hỏng; test liên kết skill pass.
 - Kiểm tay: chạy một ticket thử từ sync tới `prepared` trên một runtime; agent không bỏ bước nào so với trước khi viết lại.
+
+**Kết quả (2026-10-02):** bảng đối chiếu nằm ở [G1-SKILL-REWRITE-MAP.md](G1-SKILL-REWRITE-MAP.md), không ý nào thiếu chỗ. Ba đoạn lặp và 6 file `references/*-contract.md` đã về mục "Quy ước chung cho mọi bước" của CONTRACT. Link không hỏng; test liên kết skill pass; Claude Code nạp được 6 skill với description mới. Chưa làm: chạy một ticket thử từ sync tới `prepared` trên một runtime.
 
 **Rủi ro:** làm mất một quy tắc khi rút gọn. Bảng đối chiếu là biện pháp chính; bản gốc để so nằm ở `baseline/workshop/.agents/skills/`.
 

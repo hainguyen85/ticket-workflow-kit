@@ -1,25 +1,18 @@
 ---
 name: task-implement
-description: Triển khai plan ticket đã duyệt, tự kiểm tra/sửa lỗi trong scope, commit local và ghi CHECKS.md; dừng trước push.
+description: "Triển khai plan đã duyệt của ticket, chạy required checks, commit local và ghi CHECKS.md; dừng trước push. Dùng khi `status` trả `next: implement`."
 argument-hint: "<ticket>"
 ---
 
 # Task implement
 
-Dùng ticket ID (`<key>-<slug>`, hoặc chỉ key) từ yêu cầu hiện tại; xác nhận bằng `node .agents/workflow/task.mjs status <ticket>`. Không đoán repo/ticket hoặc đọc env. Chỉ đọc state/current views và context liên quan; tuân thủ [contract](../../workflow/CONTRACT.md) tại `.agents/workflow/CONTRACT.md`.
+Làm theo mục "Quy ước chung cho mọi bước" của [contract](../../workflow/CONTRACT.md) tại `.agents/workflow/CONTRACT.md`. "Xong" ở bước này nghĩa là kết quả dùng được tại target bàn giao và có evidence từ check runner; code đã viết mà chưa kiểm thì chưa xong.
 
-1. Đọc next/state, kiểm can-implement. Đọc plan active và diff. Tạo/resume branch `feature/<ticket>` bằng `start <ticket>`, giữ thay đổi ngoài scope.
-2. Thực hiện các steps do agent đã lập trong plan; không có thứ tự DB/API/UI cố định trong skill. Kiểm đầu vào/phụ thuộc trước mỗi phần; nếu assumptions sai, thu evidence và đánh giá ảnh hưởng.
-3. Khi task cần môi trường/dữ liệu, probe target thật rồi record observe context với evidence, không in secrets. Chỉ thao tác trong quyền đã duyệt; không hỏi lại cho test cần thiết đã nằm trong scope.
-4. Chạy từng required check bằng `check <ticket> <check-id>`. Lỗi trong scope: tự chẩn đoán/sửa và kiểm lại. Check làm thay đổi code, fail, timeout hoặc context/code drift phải xử lý; không tự điền pass. Nếu cần đổi scope/phương án thì trình delta về Finalize.
-5. Record checkpoint checks.md khi cần resume hoặc blocker. Không tạo một tài liệu tiến độ mới cho mỗi phần.
-6. Soát diff/metadata, commit local bằng identity repo, chạy lại checks cần thiết nếu content đổi. Record implement chỉ khi clean và đủ required evidence; helper ghi verified. Báo phần chưa kiểm nếu có, không coi code đã viết là xong.
-7. Chuyển Review; không push/MR ở bước này.
-
-Sau kiểm thử cô lập, thực hiện preparation trên target bàn giao trong quyền đã duyệt, probe và observe deliveryTarget/deliveryIdentity rồi chạy delivery checks tại đó. Runner phải xác minh đúng target và phiên bản đang chạy; không thay bằng server/fixture riêng rồi xóa sau test. Nếu thiếu quyền hoặc target chưa dùng được, ghi checkpoint và phần còn lại, không record verified. Hoàn thành phải báo nơi sử dụng và kết quả smoke thực tế; không để Review làm nốt bước triển khai.
-
-Khi ghi tài liệu, cung cấp change.summary và change.reason ngắn gọn. Helper tự ghi author (Git identity), thời điểm, version và changelog; không tự đặt metadata hoặc sửa bản lưu cũ. Approval/check runs là sự kiện riêng, không tăng version PLAN.
-
-Khi lệnh báo `docsRepo.uncommitted: true`, commit phần hồ sơ của ticket trong repo hồ sơ (`docs(ticket): <ticket> <bước>`, metadata trung lập); không push — người dùng tự push để chia sẻ với team.
-
-Mỗi lần báo: đã làm, phát hiện chính, trạng thái thật, current doc, bước tiếp theo. Đọc [reference](references/implementation-contract.md) cho format và helper của bước này.
+1. **Vào đúng chỗ làm.** `can-implement <ticket>` phải qua; đọc plan đang hiệu lực và diff hiện có. `start <ticket>` tạo hoặc quay lại branch `feature/<ticket>`. Thay đổi ngoài scope đang có trong worktree được giữ nguyên. Xong khi đang ở đúng branch của ticket.
+2. **Làm theo steps của plan**, theo thứ tự phụ thuộc. Trước mỗi step, kiểm đầu vào và phụ thuộc của nó; giả định nào sai thì thu căn cứ và đánh giá ảnh hưởng tới plan. Xong một step khi các check của step đó pass.
+3. **Dùng môi trường thật khi task cần.** Probe target rồi `record <ticket> observe` với các dữ kiện đã kiểm và căn cứ; giá trị bí mật ở lại trong môi trường, hồ sơ chỉ ghi tên và danh tính không nhạy cảm. Mọi thao tác nằm trong phạm vi quyền plan đã duyệt; test cần thiết thuộc phạm vi đó thì chạy luôn. Xong khi mỗi dữ kiện môi trường mà check dựa vào đã nằm trong một bản ghi `observe`.
+4. **Chạy từng required check** bằng `check <ticket> <check-id>`; kết quả check chỉ đến từ lệnh này. Lỗi trong scope thì tự chẩn đoán, sửa và chạy lại. Check fail, timeout, làm đổi source, hoặc evidence cũ vì code/context đổi đều phải xử lý xong. Cần đổi scope hoặc phương án thì trình phần thay đổi và quay Finalize. Xong khi mọi required check pass trên trạng thái code hiện tại.
+5. **Nghiệm thu tại target bàn giao**, sau kiểm thử cô lập: thực hiện `preparation` trong phạm vi quyền đã duyệt; probe và `observe` `deliveryTarget` cùng `deliveryIdentity`; chạy các delivery check tại chính target đó, để runner xác minh đúng target và phiên bản đang chạy. Thiếu quyền hoặc target chưa dùng được thì ghi checkpoint với phần còn lại. Xong khi các delivery check pass tại target.
+6. **Checkpoint khi cần dừng giữa chừng**: `record <ticket> checkpoint` với checks.md nêu phần đã làm, phần còn lại, bước tiếp, và `blocker` nếu bị chặn. Toàn bộ tiến độ nằm trong checks.md. Xong khi `status` cho thấy stage implement ở `in-progress` hoặc `blocked`.
+7. **Hoàn tất.** Soát diff và metadata; commit local bằng Git identity của repo; chạy lại các check bị ảnh hưởng nếu nội dung vừa đổi. `record <ticket> implement` khi worktree sạch và đủ evidence; helper ghi `verified`. Xong khi `status` trả `next: review`.
+8. **Báo cáo** nơi sử dụng, kết quả smoke thực tế và phần chưa kiểm được nếu có; rồi chuyển Review. Push và MR thuộc bước Handoff, do developer thực hiện.

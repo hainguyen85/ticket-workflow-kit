@@ -1,26 +1,21 @@
 ---
 name: task-review
-description: Review code và evidence của ticket trên đúng phiên bản; ghi findings hoặc verdict trong CHECKS.md.
+description: "Review code và evidence của ticket trên đúng commit theo hai trục, ghi findings hoặc verdict vào CHECKS.md. Dùng khi `status` trả `next: review`."
 argument-hint: "<ticket>"
 ---
 
 # Task review
 
-Dùng ticket ID (`<key>-<slug>`, hoặc chỉ key) từ yêu cầu hiện tại; xác nhận bằng `node .agents/workflow/task.mjs status <ticket>`. Không đoán repo/ticket hoặc đọc env. Chỉ đọc state/current views và context liên quan; tuân thủ [contract](../../workflow/CONTRACT.md) tại `.agents/workflow/CONTRACT.md`.
+Làm theo mục "Quy ước chung cho mọi bước" của [contract](../../workflow/CONTRACT.md) tại `.agents/workflow/CONTRACT.md`. Review là một lượt kiểm độc lập trên chính diff và evidence; bản tóm tắt của bước Implement chỉ là điểm bắt đầu để đọc.
 
-1. Đọc state, plan/AC, diff và code liên quan, implementation evidence. Không chỉ đọc summary của người implement.
-2. Review theo **hai trục tách riêng**, mỗi trục một lượt đọc diff riêng (một subagent cho mỗi trục khi runtime hỗ trợ), theo [review-axes](references/review-axes.md):
-   - **Yêu cầu**: diff so với AC/plan/delivery — phần thiếu hoặc làm dở, phần thừa ngoài plan, phần có làm nhưng sai. Kiểm assertions thật sự chứng minh AC, kind/target đúng, runtime bắt buộc được kiểm bằng runtime thật. Đối chiếu security/data lifecycle/compatibility khi liên quan.
+1. **Đọc căn cứ**: plan và AC, diff từ base branch tới HEAD đã implement, code liên quan, evidence của các check. Xong khi đã đọc toàn bộ diff.
+2. **Review theo hai trục tách riêng**, mỗi trục một lượt đọc diff riêng (một subagent cho mỗi trục khi runtime hỗ trợ), theo [review-axes](references/review-axes.md) tại `.agents/skills/task-review/references/review-axes.md`:
+   - **Yêu cầu**: diff so với AC, plan và delivery — phần thiếu hoặc làm dở, phần thừa ngoài plan, phần có làm nhưng sai. Kiểm assertion thật sự chứng minh AC, `kind`/target đúng, runtime bắt buộc được kiểm bằng runtime thật. Đối chiếu bảo mật, vòng đời dữ liệu và tương thích khi liên quan.
    - **Chuẩn code**: diff so với chuẩn code đã viết ra của repo, cộng danh sách smell nền.
-   Báo hai trục dưới hai tiêu đề `## Yêu cầu` và `## Chuẩn code` trong checks.md, mỗi finding ghi `axis`; giữ nguyên từng trục, vì một thay đổi có thể đạt trục này và trượt trục kia.
-3. Có findings ở bất kỳ trục nào: record review-findings với checks.md và findings open; quay Implement sửa trong scope. Không ép report thành pass.
-4. Code đổi: refresh evidence, record implement đúng HEAD, rồi review lại phần ảnh hưởng. Khi đủ: record review verdict pass, findings resolved; helper kiểm required evidence và ghi reviewed.
-5. Đủ điều kiện thì chuyển Handoff theo yêu cầu user; review local chưa phải leader acceptance.
 
-Kiểm cả độ đầy đủ của plan so với kết quả người dùng cần, không chỉ tuân thủ plan. Đối chiếu delivery target, phiên bản, preparation và assertions trên chính target: test copy pass không chứng minh target đã dùng được. Target chưa sẵn sàng hoặc plan loại mất bước bàn giao cần thiết là finding; sai phạm vi thì quay Finalize, không tự mở rộng quyền.
-
-Khi ghi tài liệu, cung cấp change.summary và change.reason ngắn gọn. Helper tự ghi author (Git identity), thời điểm, version và changelog; không tự đặt metadata hoặc sửa bản lưu cũ. Approval/check runs là sự kiện riêng, không tăng version PLAN.
-
-Khi lệnh báo `docsRepo.uncommitted: true`, commit phần hồ sơ của ticket trong repo hồ sơ (`docs(ticket): <ticket> <bước>`, metadata trung lập); không push — người dùng tự push để chia sẻ với team.
-
-Mỗi lần báo: đã làm, phát hiện chính, trạng thái thật, current doc, bước tiếp theo. Đọc [reference](references/review-contract.md) cho format và helper của bước này.
+   Xong khi mỗi trục có danh sách findings riêng (có thể rỗng), mỗi finding ghi `axis`.
+3. **Kiểm độ đầy đủ của plan** so với kết quả người dùng cần: delivery target, phiên bản, phần chuẩn bị và assertion trên chính target. Test trên bản sao pass chưa chứng minh target dùng được. Target chưa sẵn sàng, hoặc plan thiếu một bước bàn giao cần thiết, là một finding; sai phạm vi thì quay Finalize để plan được duyệt lại. Xong khi trả lời được, kèm evidence: target bàn giao đã dùng được hay chưa.
+4. **Có findings ở bất kỳ trục nào**: `record <ticket> review-findings` với checks.md (hai tiêu đề `## Yêu cầu` và `## Chuẩn code`, giữ nguyên từng trục) và các findings `open`; quay Implement sửa trong scope. Verdict phản ánh đúng những gì tìm thấy. Xong khi `status` trả `next: implement`.
+5. **Sau khi code đổi**: chạy lại các check bị ảnh hưởng, `record implement` trên HEAD mới, rồi review lại phần bị ảnh hưởng. Xong khi các check pass trên HEAD mới và mỗi finding cũ đã được kiểm lại.
+6. **Đủ điều kiện**: `record <ticket> review` với `verdict: "pass"` và mọi finding `resolved`; helper kiểm evidence và ghi `reviewed`. Xong khi `status` trả `next: handoff`.
+7. **Báo cáo.** Chuyển Handoff khi người dùng yêu cầu. `reviewed` là review nội bộ của workflow; việc nghiệm thu của leader diễn ra trên MR.

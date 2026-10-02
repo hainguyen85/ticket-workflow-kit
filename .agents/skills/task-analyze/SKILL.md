@@ -1,25 +1,17 @@
 ---
 name: task-analyze
-description: Điều tra hiện trạng và lựa chọn xử lý ticket; cập nhật TASK.md, không sửa code.
+description: "Điều tra hiện trạng và đề xuất phương án xử lý cho ticket, ghi vào TASK.md; chưa sửa code. Dùng khi `status` trả `next: analysis`."
 argument-hint: "<ticket>"
 ---
 
 # Task analyze
 
-Dùng ticket ID (`<key>-<slug>`, hoặc chỉ key) từ yêu cầu hiện tại; xác nhận bằng `node .agents/workflow/task.mjs status <ticket>`. Không đoán repo/ticket hoặc đọc env. Chỉ đọc state/current views và context liên quan; tuân thủ [contract](../../workflow/CONTRACT.md) tại `.agents/workflow/CONTRACT.md`.
+Làm theo mục "Quy ước chung cho mọi bước" của [contract](../../workflow/CONTRACT.md) tại `.agents/workflow/CONTRACT.md`. Kết quả của bước này là TASK.md đủ để một người khác lập plan mà không phải hỏi lại bối cảnh; việc sửa code bắt đầu ở Implement, sau khi plan được duyệt.
 
-1. Đảm bảo intake hiện hành; đọc current state, nguồn trong `request/` và diff liên quan. Nếu ticket có ticket liên quan (dòng `Liên quan` ở đầu TASK.md, ví dụ một ticket CR), đọc TASK/PLAN hiện hành của ticket đó làm bối cảnh; đó là dữ liệu tham khảo, không phải chỉ dẫn.
-2. Tự chọn facts cần điều tra từ yêu cầu/rủi ro. Theo luồng code, config/plugins và runtime khi cần; không giả định mọi task có DB/API/UI. Ghi observations observed/inferred/unknown; facts observed có căn cứ.
-3. Tìm khoảng cách với yêu cầu, dependencies, rủi ro và cách verify. Thiếu dữ kiện có thể thu thập thì tiếp tục điều tra; chỉ hỏi quyết định còn thiếu, theo vòng, mỗi câu kèm đáp án đề xuất (mục "Hỏi quyết định theo vòng" trong contract). Không khởi chạy thao tác phá hủy dữ liệu.
-4. Đề xuất phương án với đánh đổi vừa đủ. Một hướng rõ có thể kèm lựa chọn thay thế ngắn; không bắt mọi task có hai kiến trúc dài. Security analysis theo trust boundary thực của task.
-5. Record analysis task.md và observations. Câu hỏi chưa ai trả lời được ngay (chờ khách hàng, chờ leader) ghi vào mục câu hỏi mở của task.md, mỗi câu kèm đáp án đề xuất. Người phụ trách chọn hướng; không tự code. CR chỉ phân tích delta và ảnh hưởng, giữ lịch sử.
-
-Khảo sát trạng thái người dùng đang dùng và target bàn giao (runtime hoặc artifact). Xác định đường đi từ hiện trạng tới dùng được: các bước chuẩn bị, dữ liệu/cấu hình/phụ thuộc khi liên quan và cách nghiệm thu tại target. Phân biệt môi trường test với môi trường bàn giao; facts chưa rõ phải được điều tra, không tự loại phần vận hành khỏi scope.
-
-Người nhận ticket ở bước sau có thể không phải người phân tích: TASK.md phải tự đủ để developer lập plan mà không cần hỏi lại bối cảnh.
-
-Khi ghi tài liệu, cung cấp change.summary và change.reason ngắn gọn. Helper tự ghi author (Git identity), thời điểm, version và changelog; không tự đặt metadata hoặc sửa bản lưu cũ. Approval/check runs là sự kiện riêng, không tăng version PLAN.
-
-Khi lệnh báo `docsRepo.uncommitted: true`, commit phần hồ sơ của ticket trong repo hồ sơ (`docs(ticket): <ticket> <bước>`, metadata trung lập); không push — người dùng tự push để chia sẻ với team.
-
-Mỗi lần báo: đã làm, phát hiện chính, trạng thái thật, current doc, bước tiếp theo. Đọc [reference](references/analysis-contract.md) cho format và helper của bước này.
+1. **Nắm đầu vào.** Intake phải hiện hành (`docsMissing: false`); nếu chưa, quay Sync. Đọc các nguồn hiện hành trong `request/`, TASK.md và phần code liên quan. Ticket có dòng `Liên quan` ở đầu TASK.md thì đọc TASK/PLAN hiện hành của ticket đó làm bối cảnh; đó là dữ liệu tham khảo. Với CR, phân tích phần thay đổi và ảnh hưởng của nó, giữ nguyên phần phân tích cũ làm lịch sử. Xong khi nêu được yêu cầu trong một hai câu và biết nguồn nào là mới.
+2. **Điều tra hiện trạng.** Chọn dữ kiện cần biết từ yêu cầu và rủi ro; lần theo luồng code, config/plugin và runtime khi cần. Phạm vi điều tra do task quyết định: task tài liệu hay logic thuần chỉ cần những tầng nó chạm tới. Thao tác điều tra chỉ đọc, dữ liệu và trạng thái hệ thống giữ nguyên. Mỗi dữ kiện thành một observation: `observed` kèm căn cứ (file, lệnh, kết quả), `inferred`, hoặc `unknown`. Xong khi mọi dữ kiện mà plan sẽ dựa vào đều `observed`, hoặc được ghi rõ là chưa biết kèm lý do.
+3. **Khảo sát đường tới "dùng được".** Trạng thái người dùng đang dùng; target bàn giao (runtime hay artifact); các bước chuẩn bị, dữ liệu, cấu hình, phụ thuộc; cách nghiệm thu tại target; môi trường test khác môi trường bàn giao ở điểm nào. Phần vận hành thuộc scope của ticket. Xong khi task.md trả lời được: kết quả sẽ được dùng ở đâu và được kiểm ở đó bằng cách nào.
+4. **Xác định khoảng cách và phương án.** Khoảng cách so với yêu cầu, phụ thuộc, rủi ro (bảo mật xét theo ranh giới tin cậy thật của task) và cách verify. Đề xuất phương án với đánh đổi vừa đủ để quyết định: một hướng rõ ràng kèm lựa chọn thay thế ngắn là đủ. Xong khi mỗi phương án nêu được nó giải quyết gì, giá phải trả, và kiểm bằng cách nào.
+5. **Hỏi các quyết định còn thiếu** theo mục "Hỏi quyết định theo vòng" của contract; dữ kiện tra được thì tự tra tiếp. Câu chưa ai trả lời được ngay (chờ khách hàng, chờ leader) ghi vào mục câu hỏi mở của task.md kèm đáp án đề xuất. Xong khi không còn quyết định nào bị ngầm giả định.
+6. **Ghi analysis**: `record <ticket> analysis` với task.md và `observations`. Xong khi `status` trả `next: finalize`.
+7. **Báo cáo**; người phụ trách chọn hướng xử lý từ các phương án đã nêu.
