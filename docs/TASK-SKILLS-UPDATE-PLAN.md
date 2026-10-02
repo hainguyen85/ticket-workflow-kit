@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Căn cứ | [TASK-SKILLS-BLUEPRINT.md](TASK-SKILLS-BLUEPRINT.md) bản 1.7, mục 13.4 (các việc 0, A–E) và R9, R17, R20, R21 |
-| Trạng thái | Chưa bắt đầu. Điều kiện trước G0: trạng thái hiện tại của repo đã được commit. Mỗi gói việc chỉ làm khi người dùng yêu cầu. |
+| Căn cứ | [TASK-SKILLS-BLUEPRINT.md](TASK-SKILLS-BLUEPRINT.md) bản 1.8, mục 13.4 (các việc 0, A–E) và R9, R17, R20, R21 |
+| Trạng thái | **G0 đã làm** (2026-10-02). G1–G6 chưa bắt đầu; mỗi gói chỉ làm khi người dùng yêu cầu. |
 | Người đọc | Người hoặc agent sẽ thực hiện việc cập nhật |
 
 Kế hoạch này biến các quyết định đã chốt trong blueprint thành các gói việc làm được. Nó không thêm quyết định mới: chỗ nào kế hoạch và blueprint khác nhau thì blueprint đúng, và phải sửa kế hoạch.
@@ -48,7 +48,7 @@ G0 ──> G1 ──> G2 ──> G3 ──> G4 ──> G5 ──> G6
 
 ## 4. Các gói việc
 
-### G0. Cho agent gọi được các bước
+### G0. Cho agent gọi được các bước — ĐÃ LÀM
 
 **Mục tiêu:** agent tự gọi được skill task-* như ở baseline; các điểm dừng chờ người không đổi.
 
@@ -65,6 +65,8 @@ G0 ──> G1 ──> G2 ──> G3 ──> G4 ──> G5 ──> G6
 - Test liên kết skill pass (`--test-name-pattern="links the kit skills"`).
 - Kiểm tay, cả Claude Code và Codex, session mới: sáu skill xuất hiện trong danh sách skill agent gọi được; sau khi `status` trả `next: review`, yêu cầu "làm tiếp" khiến agent tự gọi `task-review`.
 - Kiểm tay cổng: yêu cầu agent implement khi plan chưa duyệt → helper từ chối.
+
+**Kết quả (2026-10-02):** hai tiêu chí đầu đạt. Trong Claude Code, sáu skill xuất hiện lại trong danh sách skill agent gọi được ngay sau khi gỡ cờ. Chưa kiểm: Codex; việc agent tự gọi `task-review` sau implement và việc helper từ chối implement khi plan chưa duyệt trong một ticket thật (cổng này đã có test tự động).
 
 **Rủi ro:** agent tự chạy skill khi người dùng không định làm ticket. Giảm bằng description mô tả đúng điều kiện dùng (xử lý ở G1).
 

@@ -1,5 +1,3 @@
 interface:
   display_name: "Task handoff"
   short_description: "Chuẩn bị bàn giao và nội dung MR"
-policy:
-  allow_implicit_invocation: false

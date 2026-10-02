@@ -2,7 +2,6 @@
 name: task-finalize
 description: Chốt PLAN.md từ yêu cầu, hiện trạng đã điều tra và phương án được chọn; chưa implement.
 argument-hint: "<ticket>"
-disable-model-invocation: true
 ---
 
 # Task finalize

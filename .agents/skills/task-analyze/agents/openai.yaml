@@ -1,5 +1,3 @@
 interface:
   display_name: "Task analyze"
   short_description: "Điều tra hiện trạng, đề xuất phương án"
-policy:
-  allow_implicit_invocation: false

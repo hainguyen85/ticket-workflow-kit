@@ -2,7 +2,6 @@
 name: task-review
 description: Review code và evidence của ticket trên đúng phiên bản; ghi findings hoặc verdict trong CHECKS.md.
 argument-hint: "<ticket>"
-disable-model-invocation: true
 ---
 
 # Task review

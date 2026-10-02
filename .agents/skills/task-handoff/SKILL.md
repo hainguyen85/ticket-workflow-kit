@@ -2,7 +2,6 @@
 name: task-handoff
 description: Chuẩn bị bàn giao ticket đã verified/reviewed, soạn nội dung MR; developer tự push và tạo MR, helper xác minh và ghi nhận.
 argument-hint: "<ticket> [mr-url]"
-disable-model-invocation: true
 ---
 
 # Task handoff

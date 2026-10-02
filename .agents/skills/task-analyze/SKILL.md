@@ -2,7 +2,6 @@
 name: task-analyze
 description: Điều tra hiện trạng và lựa chọn xử lý ticket; cập nhật TASK.md, không sửa code.
 argument-hint: "<ticket>"
-disable-model-invocation: true
 ---
 
 # Task analyze

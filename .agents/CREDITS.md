@@ -11,7 +11,7 @@ Một số kỹ thuật trong các skill task-* được phỏng theo bộ skill
   - `tdd` → điểm đặt test trong `task-finalize` và các kiểu test kém trong `task-review/references/review-axes.md`.
   - `code-review` → hai trục review và danh sách smell nền trong `task-review`.
   - `pr` → mẫu body MR trong `task-handoff`. Skill `pr` ghi công skill `show-me` của Dex Horthy (Humanlayer).
-  - `writing-for-agents` → phân loại skill chỉ người dùng gọi (`disable-model-invocation`, `agents/openai.yaml`).
+  - Quy ước của repo đó về `agents/openai.yaml` → file tên hiển thị cho Codex cạnh mỗi `SKILL.md`.
 
 ## Martin Fowler
 

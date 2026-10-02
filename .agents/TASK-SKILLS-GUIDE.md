@@ -48,7 +48,7 @@ Bốn điều quan trọng nhất:
 - **Hồ sơ ticket nằm ở repo Git riêng**, chia sẻ bằng commit/push. Mỗi ticket có `TASK.md`, `PLAN.md`, `CHECKS.md`, nguồn yêu cầu trong `request/` và lịch sử bất biến trong `.workflow/`. Không sửa tay.
 - **Chỉ cần Git và Node.** Không token, không gọi API hosting, không `package.json`. Lệnh duy nhất: `node .agents/workflow/task.mjs`.
 
-Cách gọi skill: Codex dùng `$task-sync`, Claude Code dùng `/task-sync`, kèm file hoặc mô tả yêu cầu; các bước sau kèm **ticket ID**, ví dụ `$task-analyze REQ-260930-1415` hoặc `/task-analyze REQ-260930-1415`. Sáu skill này chỉ chạy khi người dùng gọi; agent không tự kích hoạt chúng.
+Cách gọi skill: Codex dùng `$task-sync`, Claude Code dùng `/task-sync`, kèm file hoặc mô tả yêu cầu; các bước sau kèm **ticket ID**, ví dụ `$task-analyze REQ-260930-1415` hoặc `/task-analyze REQ-260930-1415`. Agent cũng tự gọi được các skill này khi đi tiếp sang bước mà `status` chỉ ra, như ở bản workshop gốc. Ba điểm luôn dừng chờ người: chọn hướng xử lý, duyệt plan, và push/tạo MR.
 
 ---
 

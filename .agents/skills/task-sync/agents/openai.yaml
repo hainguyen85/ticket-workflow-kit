@@ -1,5 +1,3 @@
 interface:
   display_name: "Task sync"
   short_description: "Tạo ticket hoặc nhận CR từ file/chat"
-policy:
-  allow_implicit_invocation: false
