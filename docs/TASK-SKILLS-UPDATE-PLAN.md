@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Căn cứ | [TASK-SKILLS-BLUEPRINT.md](TASK-SKILLS-BLUEPRINT.md) bản 1.13, mục 13.4 (các việc 0, A–E) và R9, R17, R20, R21 |
-| Trạng thái | **G0–G5 đã làm** (2026-10-02). G6 chưa bắt đầu; chỉ làm khi người dùng yêu cầu. |
+| Căn cứ | [TASK-SKILLS-BLUEPRINT.md](TASK-SKILLS-BLUEPRINT.md) bản 1.14, mục 13.4 (các việc 0, A–E) và R17, R20, R21, R22 |
+| Trạng thái | **G0–G5 đã làm; G6 đã hủy** (2026-10-02). Kế hoạch này đã đóng; phần còn lại là kiểm tay ở mục 5. |
 | Người đọc | Người hoặc agent sẽ thực hiện việc cập nhật |
 
 Kế hoạch này biến các quyết định đã chốt trong blueprint thành các gói việc làm được. Nó không thêm quyết định mới: chỗ nào kế hoạch và blueprint khác nhau thì blueprint đúng, và phải sửa kế hoạch.
@@ -20,14 +20,14 @@ Kế hoạch này biến các quyết định đã chốt trong blueprint thành
 | G3 | Glossary và ADR trong repo hồ sơ | 13.4-C, D23 |
 | G4 | Skill `task-retro` | 13.4-D, D24 |
 | G5 | Bảng câu hỏi gửi người ngoài | 13.4-E |
-| G6 | Ví dụ theo stack Spring Boot + Vue.js; chốt tài liệu | R9, R20 |
+| G6 | ~~Ví dụ theo stack Spring Boot + Vue.js; chốt tài liệu~~ — **hủy** | R22, D30 |
 
 **Không làm:** những thứ ở blueprint mục 13.5 (không đưa vào) và 13.7 (hoãn: xác nhận của người test).
 
 ## 2. Ràng buộc chung
 
 - **Luồng bước và trạng thái giữ như baseline (R20).** Không gói nào thêm stage, status hay cổng. Chỉ G3 sửa helper, và chỉ để thêm hai khóa cấu hình đường dẫn.
-- **Kỹ thuật viết lại, không copy** (blueprint 13.6): tiếng Việt, ví dụ Spring Boot/Vue.js, ghi nguồn vào `.agents/CREDITS.md`.
+- **Kỹ thuật viết lại, không copy** (blueprint 13.6): tiếng Việt, ví dụ trung tính về stack (R22), ghi nguồn vào `.agents/CREDITS.md`.
 - **Một bản skill duy nhất** trong `.agents/skills`; tên 6 skill hiện có không đổi.
 - **Mỗi gói kết thúc bằng:** cập nhật trạng thái trong blueprint mục 13.2/13.3 và thêm một dòng vào lịch sử blueprint; kiểm link của các tài liệu đã sửa; chạy phần test nêu trong gói.
 - **Commit trạng thái hiện tại trước khi bắt đầu G0** (đã chốt), rồi commit sau mỗi gói, để mỗi gói là một thay đổi tách bạch và hoàn tác được.
@@ -174,25 +174,23 @@ Glossary và ADR là Markdown thường do agent sửa trực tiếp; helper kh�
 
 **Kết quả (2026-10-02):** cách soạn nằm một chỗ, trong mục "Bảng câu hỏi gửi người ngoài" của CONTRACT; `task-sync` (bước 5 mới, trước khi ghi intake) và `task-analyze` (bước hỏi quyết định) trỏ tới. Tên file là `.workflow-tmp/questions-<key>-r<revision>-<chủ đề>.md`, mỗi bảng một tên riêng để lần sync sau không thay thế câu trả lời của lần trước. Đã thử trên một repo thử: sync file đã điền tạo revision 2, `item-added`, `next: sync`, `sourceIds` gồm cả nguồn mới. Chưa làm: để agent tự soạn bảng câu hỏi trên một ticket thật có câu hỏi mở.
 
-### G6. Ví dụ theo stack và chốt tài liệu
+### G6. Ví dụ theo stack và chốt tài liệu — HỦY
 
-**Mục tiêu:** mọi ví dụ nói đúng stack của team; blueprint phản ánh trạng thái đã làm.
+Người dùng quyết định (2026-10-02): bộ kit là workflow generic và không được phụ thuộc vào một tech stack cụ thể, nên không viết ví dụ theo stack Spring Boot + Vue.js vào CONTRACT, guide, WORKFLOW_SETUP hay `review-axes.md` (blueprint R22, D30).
 
-| Sửa | Nội dung |
-|---|---|
-| CONTRACT (ví dụ plan) | Một ví dụ là **lát dọc chạm cả hai phía** của cùng một repo, mọi lệnh chạy từ root: backend `["mvn","-q","-Dtest=NoteSearchServiceTest","test"]`; frontend `["npm","--prefix","frontend","run","test:unit","--","--run"]` (Vitest; tên script theo `frontend/package.json` của dự án) và `["npm","--prefix","frontend","run","build"]`. Mỗi check có `timeoutSeconds`. `files` liệt kê đường dẫn cả hai phía (`src/main/java/…`, `frontend/src/…`). |
-| `task-review/references/review-axes.md` | Nguồn chuẩn code thêm phía frontend: cấu hình ESLint/Prettier, quy ước component Vue. |
-| guide (mục lưu ý cho dự án), ADAPTATION-DESIGN, WORKFLOW_SETUP | "Java trên Windows" → Spring Boot (Maven, root) + Vue.js (`frontend/`, npm, Vitest). Thư mục phải nằm trong `.gitignore`: `target/`, `frontend/node_modules/`, `frontend/dist/`, thư mục coverage. Ghi chú: check không được làm đổi file được Git theo dõi, nên dùng `npm ci` thay cho `npm install` nếu check cần cài dependency (tránh sửa `package-lock.json`). |
-| Blueprint | Mục 13.2/13.3: chuyển các dòng đã làm sang "Đã làm"; mục 6, 4.1, 4.10 khớp với code; thêm dòng lịch sử. |
+Việc đã làm thay cho gói này:
 
-**Nghiệm thu:** bộ test đầy đủ pass; không link hỏng trong mọi tài liệu; tìm trong repo không còn chỗ nào ghi stack chỉ là "Java" mà thiếu frontend.
+- Viết lại trung tính bốn chỗ đã thêm ví dụ theo stack ở các gói trước: ví dụ lát dọc trong `task-finalize` (G1), danh sách check sẵn có trong `task-retro` và mục 5.7 của guide (G4), ví dụ ADR trong `GLOSSARY-ADR.md` (G3).
+- Phần "chốt tài liệu": trạng thái ở blueprint mục 13.2 đã được cập nhật theo từng gói; mục 13.4 đổi tiêu đề thành đã làm xong.
 
-**Cần kiểm khi làm:** runner đã chạy được file `.cmd` (đã thử với `mvn.cmd`); `npm` trên Windows cũng là `npm.cmd` nên đi cùng đường đó, nhưng chưa được thử thật. Thử `npm --prefix frontend run …` qua lệnh `check` trên một repo có thư mục `frontend/` trước khi đưa ví dụ vào tài liệu.
+Còn để người dùng quyết định: các ví dụ Maven/Gradle có từ trước kế hoạch này (ví dụ plan trong CONTRACT, lưu ý chạy `.cmd` trên Windows trong guide và WORKFLOW_SETUP, "Checkstyle/SpotBugs" trong `review-axes.md`).
 
-## 5. Nghiệm thu chung sau G6
+Việc thử `npm --prefix frontend run …` qua lệnh `check` không còn thuộc kế hoạch; nó là việc kiểm khi cài bộ kit vào dự án thật.
+
+## 5. Nghiệm thu chung (kiểm tay, chưa làm)
 
 1. `node --test ".agents/workflow/tests/*.test.mjs"`: không fail (hai test symlink có thể skip trên Windows).
-2. Cài bộ kit vào một repo Spring Boot + Vue.js thật: `setup`, `doctor` không lỗi.
+2. Cài bộ kit vào một repo thật của team: `setup`, `doctor` không lỗi; các lệnh check của dự án chạy được qua `check`.
 3. Một ticket `REQ` và một ticket `BUG` đi từ sync tới `handed-off` trên Claude Code; lặp lại ít nhất phần sync → review trên Codex.
 4. Trong lần chạy đó: agent tự chuyển implement → review; dừng đúng ở duyệt plan và ở push.
 5. Blueprint mục 8 (kết quả test tham chiếu) và mục 13 khớp với thực tế.
@@ -201,6 +199,7 @@ Glossary và ADR là Markdown thường do agent sửa trực tiếp; helper kh�
 
 | Câu hỏi | Trả lời | Dùng ở |
 |---|---|---|
-| Frontend Vue.js nằm cùng repo với backend hay ở repo riêng? | **Cùng repo.** | G6; một ticket vẫn gắn với một repo source và một branch, nên không cần đổi luồng. |
-| Bố cục và công cụ? | Project **Maven Spring Boot là project chính ở root**; frontend là thư mục **`frontend/`** dùng **npm** và **Vitest**. | G6: lệnh ví dụ, danh sách ignore; G1: ví dụ trong skill. |
+| Frontend Vue.js nằm cùng repo với backend hay ở repo riêng? | **Cùng repo.** | Bối cảnh; một ticket vẫn gắn với một repo source và một branch, nên không cần đổi luồng. |
+| Bố cục và công cụ? | Project **Maven Spring Boot là project chính ở root**; frontend là thư mục **`frontend/`** dùng **npm** và **Vitest**. | Bối cảnh của team; không còn dùng để viết ví dụ (R22). |
 | Có commit trạng thái hiện tại trước G0 không? | **Có**, commit trước khi bắt đầu G0. | Mục 2; điều kiện trước G0. |
+| Có viết ví dụ theo stack vào bộ kit không? | **Không.** Bộ kit là workflow generic, không phụ thuộc tech stack cụ thể. | Hủy G6; blueprint R22, D30. |

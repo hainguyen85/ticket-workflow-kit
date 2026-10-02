@@ -589,7 +589,7 @@ Mỗi sự việc được xếp vào đúng một loại:
 
 | Sự việc | Đề xuất |
 |---|---|
-| **Lỗi máy móc**: mẫu cú pháp cố định, API bị cấm, file đặt sai chỗ | Một check tự động hoặc Git hook. Check đã có trong `pom.xml` hay `frontend/package.json` mà chưa được nối vào luồng cũng là một phát hiện. |
+| **Lỗi máy móc**: mẫu cú pháp cố định, API bị cấm, file đặt sai chỗ | Một check tự động hoặc Git hook. Check đã có trong cấu hình build của dự án mà chưa được nối vào luồng cũng là một phát hiện. |
 | **Lỗi phán đoán**: nhất quán giữa các file, hợp với code xung quanh | Một quy tắc trong chuẩn code của repo, nơi trục Chuẩn code của Review đọc. |
 | **Tìm thông tin chậm** | Một dòng chỉ đường trong AGENTS.md. |
 | **Chỉ dẫn không làm đổi hành vi** | Đề xuất xóa. |

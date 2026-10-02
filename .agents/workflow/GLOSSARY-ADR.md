@@ -69,7 +69,7 @@ Thiếu một trong ba thì quyết định nằm trong TASK.md hoặc PLAN.md c
 - hình dạng kiến trúc (cách chia module, luồng dữ liệu giữa backend và frontend);
 - lựa chọn công nghệ mang tính ràng buộc lâu dài (cơ sở dữ liệu, message broker, cơ chế xác thực);
 - ranh giới sở hữu dữ liệu giữa các phân hệ;
-- chỗ cố ý đi khác đường quen thuộc ("dùng SQL viết tay thay cho JPA ở báo cáo này vì …");
+- chỗ cố ý đi khác đường quen thuộc ("dùng SQL viết tay thay cho ORM ở báo cáo này vì …");
 - ràng buộc không nhìn thấy trong code (yêu cầu tuân thủ, cam kết về thời gian phản hồi);
 - phương án bị loại vì lý do không hiển nhiên.
 
